@@ -2,6 +2,8 @@
 
 You are implementing a single task from an implementation plan. Your job is to read the task file, write the code, verify it works, and commit the changes.
 
+The **subject task file** is the task file from the current TODO entry you just dequeued in the executor (e.g., `<docs-directory>/<feature>/implementation_plan/01_02_replace_changes_tab.md`). Wherever this document refers to "the task file", read that exact path.
+
 First, read `.claude/skills/workflow-config.md` to find the quality commands and related skills for this project.
 
 ## CRITICAL: No pre-existing failures
@@ -10,7 +12,7 @@ There is no such thing as a "pre-existing failure." If the quality commands or a
 
 ## Steps
 
-1. **Read the task file** at `$TASK_FILE`. This file is self-contained — it has everything you need to know about the task, including background, files to modify, implementation details, and verification steps.
+1. **Read the task file** (the path from the current TODO entry). This file is self-contained — it has everything you need to know about the task, including background, files to modify, implementation details, and verification steps.
 
 2. **Read the files listed** in the task's "Files to modify/create" and "Background" sections. Understand the existing code before making changes.
 
