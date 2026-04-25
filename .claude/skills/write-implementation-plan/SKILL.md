@@ -8,7 +8,7 @@ argument-hint: <feature-name>
 
 You are creating a detailed implementation plan that a developer with zero context about this project can follow to build the feature. Each task is written as a self-contained file so the implementing agent never needs to hold the full plan in context.
 
-First, read `.claude/skills/workflow-config.md` to find the feature docs directory, quality commands, test conventions, migration tooling, and related skills for this project. All project-specific paths and commands referenced below come from that config file.
+First, read `.claude/workflow-config.md` to find the feature docs directory, quality commands, test conventions, migration tooling, and related skills for this project. All project-specific paths and commands referenced below come from that config file.
 
 ## Input
 

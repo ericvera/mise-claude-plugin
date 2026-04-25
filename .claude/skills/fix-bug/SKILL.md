@@ -17,7 +17,7 @@ This skill fixes bugs using a strict test-driven workflow:
    - **Purely visual bugs** (cursor style, spacing, colors, etc.): skip the end-to-end test. Verify with before/after screenshots via the manual testing skill (if available).
 3. **Fix the bug** and verify the fix
 
-First, read `.claude/skills/workflow-config.md` to find the quality commands, test conventions (including test directory locations and naming), and related skills for this project. All project-specific paths and commands referenced below come from that config file.
+First, read `.claude/workflow-config.md` to find the quality commands, test conventions (including test directory locations and naming), and related skills for this project. All project-specific paths and commands referenced below come from that config file.
 
 ## Input
 

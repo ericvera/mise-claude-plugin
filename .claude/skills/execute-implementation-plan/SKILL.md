@@ -9,7 +9,7 @@ argument-hint: <feature-name>
 
 # Execute Implementation Plan
 
-First, read `.claude/skills/workflow-config.md` to find the feature docs directory and quality commands for this project.
+First, read `.claude/workflow-config.md` to find the feature docs directory and quality commands for this project.
 
 ## Input
 

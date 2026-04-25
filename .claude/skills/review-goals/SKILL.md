@@ -7,7 +7,7 @@ argument-hint: <feature-name>
 
 # Review Goals Document
 
-First, read `.claude/skills/workflow-config.md` to find the feature docs directory for this project.
+First, read `.claude/workflow-config.md` to find the feature docs directory for this project.
 
 Read my goals document at `<docs-directory>/$ARGUMENTS/goals.md`. This is a high-level description of what I want to achieve, not a requirements document or spec.
 

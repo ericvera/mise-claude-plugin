@@ -4,7 +4,7 @@ You are implementing a single task from an implementation plan. Your job is to r
 
 The **subject task file** is the task file from the current TODO entry you just dequeued in the executor (e.g., `<docs-directory>/<feature>/implementation_plan/01_02_replace_changes_tab.md`). Wherever this document refers to "the task file", read that exact path.
 
-First, read `.claude/skills/workflow-config.md` to find the quality commands and related skills for this project.
+First, read `.claude/workflow-config.md` to find the quality commands and related skills for this project.
 
 ## CRITICAL: Triage failures before fixing them
 

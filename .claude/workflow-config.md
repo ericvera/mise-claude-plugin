@@ -4,7 +4,7 @@ This file provides project-specific settings consumed by the generic workflow sk
 (`review-goals`, `create-html-mock`, `extract-requirements-from-mock`, `write-requirements`,
 `write-architecture`, `write-implementation-plan`, `execute-implementation-plan`, `fix-bug`).
 
-**Setup:** Copy this file into your project at `.claude/skills/workflow-config.md` and replace
+**Setup:** Copy this file into your project at `.claude/workflow-config.md` and replace
 all `<PLACEHOLDER>` values with your project's specifics. Delete any sections that don't apply
 to your project.
 

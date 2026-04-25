@@ -9,7 +9,7 @@ argument-hint: [feature-name]
 
 You are extracting a clean requirements document from an HTML mock iteration session.
 
-First, read `.claude/skills/workflow-config.md` to find the feature docs directory for this project.
+First, read `.claude/workflow-config.md` to find the feature docs directory for this project.
 
 ## Input
 

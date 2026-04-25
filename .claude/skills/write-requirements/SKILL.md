@@ -6,7 +6,7 @@ argument-hint: <feature-name>
 
 # Write Requirements Document
 
-First, read `.claude/skills/workflow-config.md` to find the feature docs directory for this project.
+First, read `.claude/workflow-config.md` to find the feature docs directory for this project.
 
 Read my goals document at `<docs-directory>/$ARGUMENTS/goals.md` and analyze the codebase to understand existing functionality.
 

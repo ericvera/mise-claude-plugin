@@ -9,7 +9,7 @@ argument-hint: [feature description]
 
 You are helping the user explore and refine a feature idea through HTML mocks.
 
-First, read `.claude/skills/workflow-config.md` to find the feature docs directory and any product-specific UI guidelines for this project.
+First, read `.claude/workflow-config.md` to find the feature docs directory and any product-specific UI guidelines for this project.
 
 ## Initial Setup
 
