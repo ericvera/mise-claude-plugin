@@ -38,7 +38,7 @@ First, read `.claude/workflow-config.md` to find the feature docs directory and 
 ## Creating the Mocks
 
 5. **Generate HTML mocks** that demonstrate the feature:
-   - CRITICAL: If the workflow config specifies product identity or UI guidelines, **match the look and feel of the existing product UI**. Don't guess at what it looks like — read the UI code and create a close approximation.
+   - CRITICAL: If the workflow config specifies product identity or UI guidelines, **match the look and feel of the existing product UI**. Don't guess at what it looks like — read the UI code at the path given by `<UI_CODE_ROOT>` in the workflow config and create a close approximation. If the workflow config has no Product identity section, you can skip this guidance.
    - In a single html file, create multiple mocks showing the various requested scenarios/states
    - Label each one, and also provide a short description of the scenario it is demonstrating
    - Always show the new UI elements within the context of a realistic application window

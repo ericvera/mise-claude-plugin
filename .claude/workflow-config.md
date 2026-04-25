@@ -58,10 +58,11 @@ Example (multi-step pipeline):
 ## Product identity
 
 The product is called **<PRODUCT_NAME>**. When creating HTML mocks, match the look and feel of
-the existing UI. Don't guess at what it looks like — read the UI code and create a close
-approximation.
+the existing UI. Don't guess at what it looks like — read the UI code at `<UI_CODE_ROOT>` and
+create a close approximation.
 
-(Delete this section if not relevant, e.g. for backend-only projects.)
+Example: `web/src/`, `apps/frontend/src/components/`, etc. If the project has no UI (backend-only),
+delete the entire **Product identity** section.
 
 ## Test conventions
 
