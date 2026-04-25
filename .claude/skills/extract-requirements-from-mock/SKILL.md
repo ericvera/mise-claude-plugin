@@ -23,7 +23,7 @@ Feature name: $ARGUMENTS
 2. **Gather all context**:
    - Read `mocks.context.md` for the original description, Q&A, and all logged UI tweaks
    - Read `mocks.html` to understand the final UI state
-   - Review the conversation history for any additional context
+   - Review the conversation history for any additional context. If invoked in a new session with no prior context, rely solely on `mocks.context.md` and `mocks.html` — they are the durable record of the mock iteration.
 
 3. **Extract requirements**: Create `<docs-directory>/$ARGUMENTS/requirements.md`. Follow these rules:
    - **Focus only on user-facing behavior** - what the user sees and can do
