@@ -25,10 +25,15 @@ Feature name: $ARGUMENTS
    - Read `mocks.html` to understand the final UI state
    - Review the conversation history for any additional context
 
-3. **Extract requirements**: Create `<docs-directory>/$ARGUMENTS/requirements.md` with:
+3. **Extract requirements**: Create `<docs-directory>/$ARGUMENTS/requirements.md`. Follow these rules:
    - **Focus only on user-facing behavior** - what the user sees and can do
    - **No implementation details** - don't specify how things should be built
-   - **No acceptance criteria** - just describe the behavior
+   - Use `REQ-<CATEGORY>-<N>` identifiers (e.g., `REQ-NAV-1`, `REQ-FORM-3`) — pick a short uppercase category per functional area
+   - Group requirements by functional area
+   - Use MUST/SHOULD/MAY language for clarity
+   - Each requirement should be testable
+   - Include an "Out of Scope" section that captures anything explored in the mocks but explicitly deferred
+   - Include an acceptance criteria summary table at the end
 
 4. **Structure the requirements doc**:
    ```markdown
@@ -40,11 +45,23 @@ Feature name: $ARGUMENTS
 
    ## 1. <First Major Area>
 
-   - **REQ-XXX-1:** <requirement>
-   - **REQ-XXX-2:** <requirement>
+   - **REQ-XXX-1:** The system MUST <requirement>.
+   - **REQ-XXX-2:** The system SHOULD <requirement>.
 
    ## 2. <Second Major Area>
    ...
+
+   ## Out of Scope
+
+   - <Behavior that came up during mock iteration but is explicitly deferred>
+   - <Variants explored in the mocks that won't ship in this feature>
+
+   ## Acceptance Criteria
+
+   | Requirement | Criteria |
+   |-------------|----------|
+   | REQ-XXX-1 | <how to verify this requirement is met> |
+   | REQ-XXX-2 | <how to verify this requirement is met> |
    ```
 
 5. **Present the requirements** to the user for review.
