@@ -68,7 +68,7 @@ implementation_plan/
 
 ### `00_overview.md` format
 
-```markdown
+````markdown
 # <Feature Name> - Implementation Plan
 
 ## Summary
@@ -93,7 +93,19 @@ implementation_plan/
 | `01_02_<name>.md` | <short description> | 1 | REQ-XXX-3 |
 | `02_01_<name>.md` | <short description> | 2 | REQ-YYY-1 |
 | ... | | | |
+
+```yaml
+tasks:
+  - file: 01_01_<name>.md
+    phase: 1
+  - file: 01_02_<name>.md
+    phase: 1
+  - file: 02_01_<name>.md
+    phase: 2
 ```
+````
+
+The `tasks:` YAML block is the machine-readable source of truth that the executor parses. Keep its file order in lockstep with the human-readable table above. List every task file that should be executed; do not include `_exploration_notes.md` or any other non-executable files.
 
 ### Individual task file format
 
