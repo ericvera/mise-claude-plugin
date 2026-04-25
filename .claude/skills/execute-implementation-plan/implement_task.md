@@ -6,9 +6,14 @@ The **subject task file** is the task file from the current TODO entry you just 
 
 First, read `.claude/skills/workflow-config.md` to find the quality commands and related skills for this project.
 
-## CRITICAL: No pre-existing failures
+## CRITICAL: Triage failures before fixing them
 
-There is no such thing as a "pre-existing failure." If the quality commands or any end-to-end test fails, you MUST fix it before committing — even if you believe the failure existed before your changes. ALL failures are your responsibility.
+If the quality commands or any end-to-end test fails:
+
+- If the failure is **caused by your change**, you MUST fix it before committing.
+- If the failure **already existed on the base branch** (verify with `git stash && <re-run the failing check>` or by checking out `HEAD~1` and running the check there), do NOT try to fix it. Report it as a blocker, restore your changes, and stop.
+
+The default assumption is that a failure is yours to fix. Only treat a failure as pre-existing once you've actually verified it reproduces on the base branch — otherwise long autonomous runs accumulate scope creep on unrelated bugs.
 
 ## Steps
 
