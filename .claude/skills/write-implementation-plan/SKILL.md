@@ -35,7 +35,9 @@ Feature name: $ARGUMENTS
    - Read files **directly** using the Read tool. Do NOT delegate codebase exploration to sub-agents. Sub-agent transcripts include their full conversation history (every tool call, every file read, all intermediate reasoning), which can be 10-50x larger than the files themselves.
    - If the architecture references many files (>15), prioritize the most important ones first. You can always re-read specific files later when writing individual task files.
 
-4. **Write exploration notes**: After exploring the codebase, write a structured summary of your findings to `implementation_plan/_exploration_notes.md`. This summary should capture:
+4. **Create the implementation plan folder**: Create the folder `<docs-directory>/$ARGUMENTS/implementation_plan/` now, before writing any files into it. The exploration notes and task files in the following steps assume this folder already exists.
+
+5. **Write exploration notes**: After exploring the codebase, write a structured summary of your findings to `implementation_plan/_exploration_notes.md`. This summary should capture:
    - Key file paths and their roles
    - Relevant functions, types, and variables you'll reference in task files
    - Patterns to follow (with specific file:line references)
@@ -43,9 +45,9 @@ Feature name: $ARGUMENTS
 
    This distills your understanding into a compact reference so earlier file contents can be compressed out of context before the writing phase.
 
-5. **Ask clarifying questions**: If anything in the design documents is ambiguous or if you see conflicts between the architecture and the actual codebase, ask before writing the plan.
+6. **Ask clarifying questions**: If anything in the design documents is ambiguous or if you see conflicts between the architecture and the actual codebase, ask before writing the plan.
 
-6. **Write the plan** as a folder of self-contained task files (see Output Structure below).
+7. **Write the plan** as a folder of self-contained task files (see Output Structure below).
    - Write all task files yourself sequentially using the Write tool. Do NOT use sub-agents for writing.
    - Write the `00_overview.md` file first, then write each task file one at a time.
    - This is safe for context because earlier Write tool calls get compressed as you progress, and writing markdown is lightweight compared to the exploration phase.
