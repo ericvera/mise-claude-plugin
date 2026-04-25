@@ -30,6 +30,22 @@ These skills were built with the following goals in mind:
 Caveat:
 This whole workflow assumes that you have very good verification, and especially end-to-end test coverage. No matter how good your up front planning is, agents still hallucinate, and the problem compounds with the more code they write in one go. These skills instruct Claude Code to run linters, unit tests, and end-to-end tests all along the way to keep it grounded in reality. And the code that it produces will be exactly as good as the test coverage that it has to adhere to.
 
+# Interactivity
+
+Some skills are designed to ask you questions and wait for your answers. Plan accordingly: you should expect to be at the keyboard for these, and they are not safe to leave running unattended.
+
+Interactive (require human input):
+- `/review-goals` — surfaces gaps and questions about the goals doc; you steer the next iteration.
+- `/create-html-mock` — proposes a feature name and asks clarifying questions before generating mocks, then iterates with you on the mocks.
+- `/extract-requirements-from-mock` — presents the extracted requirements and asks whether to regenerate mocks.
+- `/write-requirements` — asks clarifying questions before writing the requirements doc.
+- `/write-architecture` — asks clarifying questions or raises concerns about the requirements before writing the architecture doc.
+- `/write-implementation-plan` — asks clarifying questions about ambiguity or conflicts before writing the plan, and confirms end-to-end test choices afterward.
+- `/fix-bug` — Phase 1 stops and waits for you to confirm the bug understanding and the test file location before writing any code.
+
+Non-interactive (safe for autonomous runs):
+- `/execute-implementation-plan` — once a plan exists, this can run for hours implementing tasks one at a time, only stopping if a task hits a hard blocker.
+
 Bonus:
 I also included a separate `/fix-bug` skill in this repo. It is a simple little skill that is very effective at taking a quick-and-dirty bug description and turning it into an actionable set of repro steps, complete with a regression test and TDD approach to fixing the issue.
 
