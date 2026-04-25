@@ -28,8 +28,8 @@ The default assumption is that a failure is yours to fix. Only treat a failure a
    - Do not add unnecessary comments, docstrings, or abstractions beyond what the task requires
 
 4. **Run verification** — these are mandatory, not optional:
-   - Run the project's check command (from workflow config) for format, lint, typecheck. If it fails, fix the issues and re-run. Keep iterating until it passes.
-   - Run the project's unit test command (from workflow config). If tests fail, investigate and fix. Keep iterating until all tests pass.
+   - Run the project's check command(s) (from workflow config) for format, lint, typecheck. If the workflow config provides a list of commands, run them in order and stop at the first failure. If it fails, fix the issues and re-run from the beginning of the list. Keep iterating until every command in the slot passes.
+   - Run the project's unit test command(s) (from workflow config). If the slot is a list, run them in order and stop at the first failure. If tests fail, investigate and fix. Keep iterating until every command in the slot passes.
    - Run any specific end-to-end tests listed in the task's verification checklist. CRITICAL: If the workflow config specifies an end-to-end test skill, always use that skill to run end-to-end tests — never run them directly. Keep iterating until all tests pass.
    - For all of the above: keep fixing and re-running until everything passes. Only report failure if you hit a hard blocker that you genuinely cannot resolve (e.g., a dependency that doesn't exist, a missing API, or a fundamental design contradiction).
 

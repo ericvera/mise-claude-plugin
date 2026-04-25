@@ -28,9 +28,32 @@ and `implementation_plan/` as applicable.
 
 Run these commands to verify code quality. All must pass before committing.
 
+Each slot accepts either a single command or a list of commands. When a list is provided, run the commands in the order they appear and stop at the first failure (treat the slot as failing).
+
 - **Format**: `<FORMAT_COMMAND>`
 - **Check (lint + typecheck)**: `<CHECK_COMMAND>`
 - **Unit tests**: `<UNIT_TEST_COMMAND>`
+
+Example (single command):
+
+```
+- Format: `npm run format`
+- Check (lint + typecheck): `npm run check`
+- Unit tests: `npm test`
+```
+
+Example (multi-step pipeline):
+
+```
+- Format:
+  - `pnpm -w format`
+- Check (lint + typecheck):
+  - `pnpm -w build`
+  - `pnpm -w lint`
+  - `pnpm -w typecheck`
+- Unit tests:
+  - `pnpm -w test:unit`
+```
 
 ## Product identity
 
