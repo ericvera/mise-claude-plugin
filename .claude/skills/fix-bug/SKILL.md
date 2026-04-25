@@ -5,6 +5,7 @@ description: |
   demonstrates the bug, confirm it fails, then fix the bug without modifying
   the test.
   Input: a description of the bug to fix.
+argument-hint: [bug-description]
 ---
 
 # Fix Bug (Test-Driven Bug Fix)
