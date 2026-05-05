@@ -1,8 +1,9 @@
 # Workflow Configuration
 
 This file provides project-specific settings consumed by the generic workflow skills
-(`review-goals`, `create-html-mock`, `extract-requirements-from-mock`, `write-requirements`,
-`write-architecture`, `write-implementation-plan`, `execute-implementation-plan`, `fix-bug`).
+(`next`, `review-goals`, `create-html-mock`, `extract-requirements-from-mock`,
+`write-requirements`, `write-architecture`, `write-implementation-plan`,
+`execute-implementation-plan`, `fix-bug`).
 
 **Setup:** Copy this file into your project at `.claude/workflow-config.md` and replace
 all `<PLACEHOLDER>` values with your project's specifics. Delete any sections that don't apply
@@ -23,6 +24,18 @@ Example: `docs/features/`, `agent_docs/`, etc.
 Within this directory, each feature has its own folder named `<feature-name>/`, containing
 `goals.md`, `requirements.md`, `architecture.md`, `mocks.html`, `mocks.context.md`,
 and `implementation_plan/` as applicable.
+
+## Backlog
+
+(Optional.) The `next` skill reads this section to list pending work when no feature is in
+progress. Describe how to fetch the top to-do items from your backlog — what tool to use,
+what query to run, which sections or labels to pull from, and any other context the agent
+needs.
+
+Example: "Use the Todoist MCP to list tasks in the project 'Engineering', filtered to the
+sections 'Doing' and 'To Do', sorted by priority."
+
+(Delete this section if you don't track work externally.)
 
 ## Quality commands
 
