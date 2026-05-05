@@ -34,35 +34,13 @@ Each slot accepts either a single command or a list of commands. When a list is 
 - **Check (lint + typecheck)**: `<CHECK_COMMAND>`
 - **Unit tests**: `<UNIT_TEST_COMMAND>`
 
-Example (single command):
-
-```
-- Format: `npm run format`
-- Check (lint + typecheck): `npm run check`
-- Unit tests: `npm test`
-```
-
-Example (multi-step pipeline):
-
-```
-- Format:
-  - `pnpm -w format`
-- Check (lint + typecheck):
-  - `pnpm -w build`
-  - `pnpm -w lint`
-  - `pnpm -w typecheck`
-- Unit tests:
-  - `pnpm -w test:unit`
-```
-
 ## Product identity
 
 The product is called **<PRODUCT_NAME>**. When creating HTML mocks, match the look and feel of
 the existing UI. Don't guess at what it looks like — read the UI code at `<UI_CODE_ROOT>` and
 create a close approximation.
 
-Example: `web/src/`, `apps/frontend/src/components/`, etc. If the project has no UI (backend-only),
-delete the entire **Product identity** section.
+(Delete this section if not relevant, e.g. for backend-only projects.)
 
 ## Test conventions
 
