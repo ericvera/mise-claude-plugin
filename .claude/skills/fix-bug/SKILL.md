@@ -10,6 +10,8 @@ argument-hint: [bug-description]
 
 # Fix Bug (Test-Driven Bug Fix)
 
+Before responding, read `.claude/skills/_shared/interaction.md` (or `~/.claude/skills/_shared/interaction.md`) for response format, question pacing, and verbosity conventions.
+
 This skill fixes bugs using a strict test-driven workflow:
 
 1. **Understand the bug** — get full clarity on the repro steps and expected behavior

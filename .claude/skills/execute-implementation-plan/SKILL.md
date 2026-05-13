@@ -9,6 +9,8 @@ argument-hint: <feature-name>
 
 # Execute Implementation Plan
 
+Before responding, read `.claude/skills/_shared/interaction.md` (or `~/.claude/skills/_shared/interaction.md`) for response format, question pacing, and verbosity conventions.
+
 First, read `.claude/workflow-config.md` to find the feature docs directory and quality commands for this project.
 
 ## Input

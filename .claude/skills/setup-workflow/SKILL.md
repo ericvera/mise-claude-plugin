@@ -6,6 +6,8 @@ disable-model-invocation: true
 
 # Set up workflow
 
+Before responding, read `.claude/skills/_shared/interaction.md` (or `~/.claude/skills/_shared/interaction.md`) for response format, question pacing, and verbosity conventions.
+
 Walk the user through `.claude/workflow-config.md` and replace `<PLACEHOLDER>` values so the rest of the workflow skills work.
 
 If the file does not exist, bootstrap it by copying the global template:
@@ -28,6 +30,12 @@ For each placeholder still present, ask the user for the value, confirm, and wri
 
 Required:
 
+- `<NORMAL_OR_EXPERT>` — verbosity preference. Ask:
+  > How verbose should the skills be?
+  > - a. `normal` — explain reasoning behind suggestions
+  > - b. `expert` — terse; skip rationale unless asked
+  >
+  > Defaults to `normal` if you skip.
 - `<PATH_TO_FEATURE_DOCS>` — feature documentation directory (e.g., `docs/features/`, `agent_docs/`)
 - `<FORMAT_COMMAND>` — code formatter (single command, or a list)
 - `<CHECK_COMMAND>` — lint + typecheck (single command, or a list)

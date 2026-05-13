@@ -9,6 +9,8 @@ argument-hint: [? or what to work on]
 
 Determine the next command in the workflow for the current feature, then either run it or just explain it.
 
+Before responding, read `.claude/skills/_shared/interaction.md` (or `~/.claude/skills/_shared/interaction.md`) for response format, question pacing, and verbosity conventions.
+
 First, read `.claude/workflow-config.md` to find the feature docs directory and any backlog instructions. If the file does not exist or still has `<PLACEHOLDER>` values, run `/setup-workflow` first, then resume here.
 
 ## Steps

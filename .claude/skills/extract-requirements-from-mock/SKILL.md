@@ -9,6 +9,8 @@ argument-hint: <feature-name>
 
 You are extracting a clean requirements document from an HTML mock iteration session.
 
+Before responding, read `.claude/skills/_shared/interaction.md` (or `~/.claude/skills/_shared/interaction.md`) for response format, question pacing, and verbosity conventions.
+
 First, read `.claude/workflow-config.md` to find the feature docs directory for this project.
 
 ## Input

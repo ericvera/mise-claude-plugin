@@ -6,7 +6,9 @@ disable-model-invocation: true
 
 # Update workflows
 
-Deploy the workflow skills in this repo (`.claude/skills/*`) and the workflow-config template (`.claude/workflow-config.md`) to the user's global Claude Code directory so they're available across every project on this machine.
+Before responding, read `.claude/skills/_shared/interaction.md` (or `~/.claude/skills/_shared/interaction.md`) for response format, question pacing, and verbosity conventions.
+
+Deploy the workflow skills in this repo (`.claude/skills/*`, including the `_shared/` directory) and the workflow-config template (`.claude/workflow-config.md`) to the user's global Claude Code directory so they're available across every project on this machine.
 
 Skills and the template are **copies**, not symlinks. Re-run this skill after editing anything in `.claude/` that you want reflected globally.
 

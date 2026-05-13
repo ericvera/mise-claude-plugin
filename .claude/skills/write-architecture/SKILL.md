@@ -6,6 +6,8 @@ argument-hint: <feature-name>
 
 # Write Architecture Document
 
+Before responding, read `.claude/skills/_shared/interaction.md` (or `~/.claude/skills/_shared/interaction.md`) for response format, question pacing, and verbosity conventions.
+
 First, read `.claude/workflow-config.md` to find the feature docs directory for this project.
 
 Read my goals and requirements at `<docs-directory>/$ARGUMENTS/`

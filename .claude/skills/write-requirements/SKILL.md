@@ -6,6 +6,8 @@ argument-hint: <feature-name>
 
 # Write Requirements Document
 
+Before responding, read `.claude/skills/_shared/interaction.md` (or `~/.claude/skills/_shared/interaction.md`) for response format, question pacing, and verbosity conventions.
+
 First, read `.claude/workflow-config.md` to find the feature docs directory for this project.
 
 Read my goals document at `<docs-directory>/$ARGUMENTS/goals.md` and analyze the codebase to understand existing functionality.

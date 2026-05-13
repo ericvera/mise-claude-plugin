@@ -11,6 +11,19 @@ to your project.
 
 ---
 
+## Interaction style
+
+How verbose should the workflow skills be when talking to you?
+
+```
+Verbosity: <NORMAL_OR_EXPERT>
+```
+
+- `normal` — explain reasoning behind suggestions and options.
+- `expert` — terse; assume an experienced developer, skip rationale unless asked.
+
+Defaults to `normal` if left unset.
+
 ## Feature docs directory
 
 Feature documentation lives at:
