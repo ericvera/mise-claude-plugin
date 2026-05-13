@@ -8,7 +8,13 @@ disable-model-invocation: true
 
 Walk the user through `.claude/workflow-config.md` and replace `<PLACEHOLDER>` values so the rest of the workflow skills work.
 
-If the file does not exist, instruct the user to copy `workflow-config.md` from the workflow-skills repo into `.claude/`, then re-run this skill.
+If the file does not exist, bootstrap it by copying the global template:
+
+```
+mkdir -p .claude && cp ~/.claude/workflow-config.template.md .claude/workflow-config.md
+```
+
+The template ships alongside these skills at `~/.claude/workflow-config.template.md`. If it isn't present there either, fall back to copying `workflow-config.md` from the workflow-skills repo into `.claude/`. Then re-run this skill.
 
 ## Steps
 
