@@ -53,7 +53,7 @@ Optional. Offer to skip; if skipped, delete the surrounding section:
 
 Ask:
 
-> Do you track work in an external system (Todoist, Linear, Jira, a markdown file, etc.)? If yes, describe how to fetch the top to-do items, including any tools or queries. If no, press enter to skip.
+> Do you track work in an external system (Todoist, Linear, Jira, a markdown file, etc.)? If yes, describe how to fetch the top to-do items, including any tools or queries. If no, say so.
 
 If the user describes a backlog, add (or replace) a `## Backlog` section in the file with their description as free-form prose. The `next` skill reads this section verbatim.
 
