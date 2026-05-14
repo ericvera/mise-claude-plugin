@@ -54,7 +54,7 @@ sections 'Doing' and 'To Do', sorted by priority."
 
 Run these commands to verify code quality. All must pass before committing.
 
-Each slot accepts either a single command or a list of commands. When a list is provided, run the commands in the order they appear and stop at the first failure (treat the slot as failing).
+Each slot accepts either a single command or a list of commands. A list is run in order; if any command fails, the whole slot has failed (skills should fix the issue and re-run the slot from the start until every command passes).
 
 - **Format**: `<FORMAT_COMMAND>`
 - **Check (lint + typecheck)**: `<CHECK_COMMAND>`

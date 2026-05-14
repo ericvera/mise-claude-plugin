@@ -144,7 +144,7 @@ Now fix the actual bug in the codebase. During this phase:
 
 ### After the test passes
 
-1. Run the project's check command(s) (from workflow config) to ensure no formatting, lint, or type errors were introduced. If the workflow config provides a list of commands, run them in order and stop at the first failure; iterate until every command in the slot passes.
+1. Run the project's check command(s) (from workflow config) to ensure no formatting, lint, or type errors were introduced. If the workflow config provides a list of commands, run them in order; when one fails, fix it and re-run the slot from the start. Iterate until every command in the slot passes.
 2. Run the full end-to-end test suite for the area you changed to check for regressions.
 3. Commit the fix.
 
