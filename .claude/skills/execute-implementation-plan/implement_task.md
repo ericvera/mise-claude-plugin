@@ -6,14 +6,9 @@ The **subject task file** is the task file from the current TODO entry you just 
 
 First, read `.claude/workflow-config.md` to find the quality commands and related skills for this project.
 
-## CRITICAL: Triage failures before fixing them
+## CRITICAL: No pre-existing failures
 
-If the quality commands or any end-to-end test fails:
-
-- If the failure is **caused by your change**, you MUST fix it before committing.
-- If the failure **already existed on the base branch** (verify with `git stash && <re-run the failing check>` or by checking out `HEAD~1` and running the check there), do NOT try to fix it. Report it as a blocker, restore your changes, and stop.
-
-The default assumption is that a failure is yours to fix. Only treat a failure as pre-existing once you've actually verified it reproduces on the base branch — otherwise long autonomous runs accumulate scope creep on unrelated bugs.
+There is no such thing as a "pre-existing failure." If the quality commands or any end-to-end test fails, you MUST fix it before committing — even if you believe the failure existed before your changes. ALL failures are your responsibility.
 
 ## Steps
 
@@ -32,7 +27,7 @@ The default assumption is that a failure is yours to fix. Only treat a failure a
    - Run the project's check command(s) (from workflow config) for lint and typecheck. If the workflow config provides a list of commands, run them in order and stop at the first failure. **Trivial lint errors** (unused imports, missing semicolons, etc.) — fix them yourself and re-run. **Type errors** introduced by your change — fix them yourself and re-run. Keep iterating until every command in the slot passes.
    - Run the project's unit test command(s) (from workflow config). If tests fail, investigate and fix. Keep iterating until every command in the slot passes.
    - Run any specific end-to-end tests listed in the task's verification checklist. CRITICAL: If the workflow config specifies an end-to-end test skill, always use that skill to run end-to-end tests — never run them directly. Keep iterating until all tests pass.
-   - For all of the above: keep fixing and re-running until everything passes. Report a blocker (don't ask the user — surface and stop) **only** if the failure is outside the scope of this task to fix: a missing dependency, a missing API, a fundamental design contradiction, or a failure that already existed on the base branch (see triage rules above).
+   - For all of the above: keep fixing and re-running until everything passes. Report a blocker (don't ask the user — surface and stop) **only** if the failure is outside the scope of this task to fix: a missing dependency, a missing API, or a fundamental design contradiction.
 
 5. **Walk through the verification checklist** in the task file. Confirm each item passes.
 
