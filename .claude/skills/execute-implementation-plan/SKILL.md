@@ -9,7 +9,9 @@ argument-hint: <feature-name>
 
 # Execute Implementation Plan
 
-First, read `.claude/skills/workflow-config.md` to find the feature docs directory and quality commands for this project.
+Before responding, read `.claude/skills/_shared/interaction.md` (or `~/.claude/skills/_shared/interaction.md`) for response format, question pacing, and verbosity conventions.
+
+First, read `.claude/workflow-config.md` to find the feature docs directory and quality commands for this project.
 
 ## Input
 
@@ -38,11 +40,14 @@ Work through the TODO list in order. For each entry:
 4. Mark it as completed
 5. Move to the next entry
 
-If a task fails with a hard blocker you cannot resolve, stop and ask the user how to proceed.
+## Stopping rules
+
+Stop only on real blockers: a verification failure outside this task's scope (after the auto-fix attempts in `implement_task.md`), a genuine ambiguity unresolvable from the task file/codebase/workflow-config, or a missing dependency/API/design contradiction. If a task file appears to authorize a red intermediate state, treat it as a planning bug — stop and ask the user to regenerate the plan. Otherwise keep going.
 
 ## Do not
 
 - Read task files ahead of time — only read each task file when you start working on it
 - Skip verification steps (quality commands from workflow config, end-to-end tests)
 - Commit if verification is failing
-- Proceed past a failed task without asking the user
+- Ask the user for confirmation between tasks while everything is green — just continue
+- Ask the user which rule wins when a task note conflicts with a skill default — task notes never win on safety/verification rules

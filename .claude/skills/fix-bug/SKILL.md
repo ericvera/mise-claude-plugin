@@ -5,9 +5,12 @@ description: |
   demonstrates the bug, confirm it fails, then fix the bug without modifying
   the test.
   Input: a description of the bug to fix.
+argument-hint: [bug-description]
 ---
 
 # Fix Bug (Test-Driven Bug Fix)
+
+Before responding, read `.claude/skills/_shared/interaction.md` (or `~/.claude/skills/_shared/interaction.md`) for response format, question pacing, and verbosity conventions.
 
 This skill fixes bugs using a strict test-driven workflow:
 
@@ -17,7 +20,7 @@ This skill fixes bugs using a strict test-driven workflow:
    - **Purely visual bugs** (cursor style, spacing, colors, etc.): skip the end-to-end test. Verify with before/after screenshots via the manual testing skill (if available).
 3. **Fix the bug** and verify the fix
 
-First, read `.claude/skills/workflow-config.md` to find the quality commands, test conventions (including test directory locations and naming), and related skills for this project. All project-specific paths and commands referenced below come from that config file.
+First, read `.claude/workflow-config.md` to find the quality commands, test conventions (including test directory locations and naming), and related skills for this project. All project-specific paths and commands referenced below come from that config file.
 
 ## Input
 
@@ -141,7 +144,7 @@ Now fix the actual bug in the codebase. During this phase:
 
 ### After the test passes
 
-1. Run the project's check command (from workflow config) to ensure no formatting, lint, or type errors were introduced.
+1. Run the project's check command(s) (from workflow config) to ensure no formatting, lint, or type errors were introduced. If the workflow config provides a list of commands, run them in order; when one fails, fix it and re-run the slot from the start. Iterate until every command in the slot passes.
 2. Run the full end-to-end test suite for the area you changed to check for regressions.
 3. Commit the fix.
 

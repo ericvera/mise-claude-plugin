@@ -8,7 +8,9 @@ argument-hint: <feature-name>
 
 You are creating a detailed implementation plan that a developer with zero context about this project can follow to build the feature. Each task is written as a self-contained file so the implementing agent never needs to hold the full plan in context.
 
-First, read `.claude/skills/workflow-config.md` to find the feature docs directory, quality commands, test conventions, migration tooling, and related skills for this project. All project-specific paths and commands referenced below come from that config file.
+Before responding, read `.claude/skills/_shared/interaction.md` (or `~/.claude/skills/_shared/interaction.md`) for response format, question pacing, and verbosity conventions.
+
+First, read `.claude/workflow-config.md` to find the feature docs directory, quality commands, test conventions, migration tooling, and related skills for this project. All project-specific paths and commands referenced below come from that config file.
 
 ## Input
 
@@ -35,7 +37,9 @@ Feature name: $ARGUMENTS
    - Read files **directly** using the Read tool. Do NOT delegate codebase exploration to sub-agents. Sub-agent transcripts include their full conversation history (every tool call, every file read, all intermediate reasoning), which can be 10-50x larger than the files themselves.
    - If the architecture references many files (>15), prioritize the most important ones first. You can always re-read specific files later when writing individual task files.
 
-4. **Write exploration notes**: After exploring the codebase, write a structured summary of your findings to `implementation_plan/_exploration_notes.md`. This summary should capture:
+4. **Create the implementation plan folder**: Create the folder `<docs-directory>/$ARGUMENTS/implementation_plan/` now, before writing any files into it. The exploration notes and task files in the following steps assume this folder already exists.
+
+5. **Write exploration notes**: After exploring the codebase, write a structured summary of your findings to `implementation_plan/_exploration_notes.md`. This summary should capture:
    - Key file paths and their roles
    - Relevant functions, types, and variables you'll reference in task files
    - Patterns to follow (with specific file:line references)
@@ -43,9 +47,9 @@ Feature name: $ARGUMENTS
 
    This distills your understanding into a compact reference so earlier file contents can be compressed out of context before the writing phase.
 
-5. **Ask clarifying questions**: If anything in the design documents is ambiguous or if you see conflicts between the architecture and the actual codebase, ask before writing the plan.
+6. **Ask clarifying questions — once, batched, only when truly necessary**: Infer defaults aggressively from `.claude/workflow-config.md` and the codebase. Only ask about real ambiguities the docs/code can't resolve (e.g. architecture–codebase conflicts, missing info that materially changes plan structure). Batch every remaining question into a single round before writing; skip this step if there are none. Decide pure preference choices (naming, formatting) yourself.
 
-6. **Write the plan** as a folder of self-contained task files (see Output Structure below).
+7. **Write the plan** as a folder of self-contained task files (see Output Structure below).
    - Write all task files yourself sequentially using the Write tool. Do NOT use sub-agents for writing.
    - Write the `00_overview.md` file first, then write each task file one at a time.
    - This is safe for context because earlier Write tool calls get compressed as you progress, and writing markdown is lightweight compared to the exploration phase.
@@ -155,6 +159,7 @@ REQ-XXX-1, REQ-XXX-2
 
 ## Design principles
 
+- **Every task ends green**: Every task must leave the build green. A plan that requires a red intermediate state (one task breaks the build, a later task fixes it) is a planning bug — use **expand-contract** or **bundle** the breaking change with its caller fixes into a single task. If no green ordering exists, rethink task boundaries.
 - **Thin vertical slices over horizontal layers**: Each phase should produce working, testable functionality end-to-end, not "all backend then all frontend"
 - **Remove before building**: If the plan involves replacing existing code, schedule removal early to avoid building on deprecated patterns
 - **Earlier phases unblock later phases**: Order phases so that infrastructure and foundational components come first, enabling incremental testing

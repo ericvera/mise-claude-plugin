@@ -2,14 +2,16 @@
 name: create-html-mock
 description: Create HTML mocks for a new feature idea
 disable-model-invocation: true
-argument-hint: [feature description]
+argument-hint: [feature-description]
 ---
 
 # Create HTML Mock
 
 You are helping the user explore and refine a feature idea through HTML mocks.
 
-First, read `.claude/skills/workflow-config.md` to find the feature docs directory and any product-specific UI guidelines for this project.
+Before responding, read `.claude/skills/_shared/interaction.md` (or `~/.claude/skills/_shared/interaction.md`) for response format, question pacing, and verbosity conventions.
+
+First, read `.claude/workflow-config.md` to find the feature docs directory and any product-specific UI guidelines for this project.
 
 ## Initial Setup
 
@@ -38,7 +40,7 @@ First, read `.claude/skills/workflow-config.md` to find the feature docs directo
 ## Creating the Mocks
 
 5. **Generate HTML mocks** that demonstrate the feature:
-   - CRITICAL: If the workflow config specifies product identity or UI guidelines, **match the look and feel of the existing product UI**. Don't guess at what it looks like — read the UI code and create a close approximation.
+   - CRITICAL: If the workflow config specifies product identity or UI guidelines, **match the look and feel of the existing product UI**. Don't guess at what it looks like — read the UI code at the path given by `<UI_CODE_ROOT>` in the workflow config and create a close approximation. If the workflow config has no Product identity section, you can skip this guidance.
    - In a single html file, create multiple mocks showing the various requested scenarios/states
    - Label each one, and also provide a short description of the scenario it is demonstrating
    - Always show the new UI elements within the context of a realistic application window

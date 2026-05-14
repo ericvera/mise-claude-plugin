@@ -1,14 +1,28 @@
 # Workflow Configuration
 
 This file provides project-specific settings consumed by the generic workflow skills
-(`review-goals`, `create-html-mock`, `extract-requirements-from-mock`, `write-requirements`,
-`write-architecture`, `write-implementation-plan`, `execute-implementation-plan`, `fix-bug`).
+(`next`, `review-goals`, `create-html-mock`, `extract-requirements-from-mock`,
+`write-requirements`, `write-architecture`, `write-implementation-plan`,
+`execute-implementation-plan`, `fix-bug`).
 
-**Setup:** Copy this file into your project at `.claude/skills/workflow-config.md` and replace
+**Setup:** Copy this file into your project at `.claude/workflow-config.md` and replace
 all `<PLACEHOLDER>` values with your project's specifics. Delete any sections that don't apply
 to your project.
 
 ---
+
+## Interaction style
+
+How verbose should the workflow skills be when talking to you?
+
+```
+Verbosity: <NORMAL_OR_EXPERT>
+```
+
+- `normal` — explain reasoning behind suggestions and options.
+- `expert` — terse; assume an experienced developer, skip rationale unless asked.
+
+Defaults to `normal` if left unset.
 
 ## Feature docs directory
 
@@ -24,19 +38,48 @@ Within this directory, each feature has its own folder named `<feature-name>/`, 
 `goals.md`, `requirements.md`, `architecture.md`, `mocks.html`, `mocks.context.md`,
 and `implementation_plan/` as applicable.
 
+## Backlog
+
+(Optional.) The `next` skill reads this section to list pending work when no feature is in
+progress. Describe how to fetch the top to-do items from your backlog — what tool to use,
+what query to run, which sections or labels to pull from, and any other context the agent
+needs.
+
+Example: "Use the Todoist MCP to list tasks in the project 'Engineering', filtered to the
+sections 'Doing' and 'To Do', sorted by priority."
+
+(Delete this section if you don't track work externally.)
+
 ## Quality commands
 
 Run these commands to verify code quality. All must pass before committing.
+
+Each slot accepts either a single command or a list of commands. A list is run in order; if any command fails, the whole slot has failed (skills should fix the issue and re-run the slot from the start until every command passes).
 
 - **Format**: `<FORMAT_COMMAND>`
 - **Check (lint + typecheck)**: `<CHECK_COMMAND>`
 - **Unit tests**: `<UNIT_TEST_COMMAND>`
 
+## Code conventions
+
+(Optional.) Project-specific code conventions the implementer should follow on every task, in
+addition to whatever the task file specifies. Keep these short — quality checks (lint, typecheck)
+should catch most style issues automatically.
+
+Example:
+```
+- All imports at the top of the file; no inline imports.
+- No relative imports.
+- Prefer pure functions over classes for new utilities.
+```
+
+(Delete this section if you don't have repo-wide conventions to enforce.)
+
 ## Product identity
 
 The product is called **<PRODUCT_NAME>**. When creating HTML mocks, match the look and feel of
-the existing UI. Don't guess at what it looks like — read the UI code and create a close
-approximation.
+the existing UI. Don't guess at what it looks like — read the UI code at `<UI_CODE_ROOT>` and
+create a close approximation.
 
 (Delete this section if not relevant, e.g. for backend-only projects.)
 

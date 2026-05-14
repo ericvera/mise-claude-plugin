@@ -2,14 +2,16 @@
 name: extract-requirements-from-mock
 description: Extract requirements document from HTML mock iteration
 disable-model-invocation: true
-argument-hint: [feature-name]
+argument-hint: <feature-name>
 ---
 
 # Extract Requirements from Mock
 
 You are extracting a clean requirements document from an HTML mock iteration session.
 
-First, read `.claude/skills/workflow-config.md` to find the feature docs directory for this project.
+Before responding, read `.claude/skills/_shared/interaction.md` (or `~/.claude/skills/_shared/interaction.md`) for response format, question pacing, and verbosity conventions.
+
+First, read `.claude/workflow-config.md` to find the feature docs directory for this project.
 
 ## Input
 
@@ -23,12 +25,13 @@ Feature name: $ARGUMENTS
 2. **Gather all context**:
    - Read `mocks.context.md` for the original description, Q&A, and all logged UI tweaks
    - Read `mocks.html` to understand the final UI state
-   - Review the conversation history for any additional context
+   - Review the conversation history for any additional context. If invoked in a new session with no prior context, rely solely on `mocks.context.md` and `mocks.html` — they are the durable record of the mock iteration.
 
 3. **Extract requirements**: Create `<docs-directory>/$ARGUMENTS/requirements.md` with:
    - **Focus only on user-facing behavior** - what the user sees and can do
    - **No implementation details** - don't specify how things should be built
-   - **No acceptance criteria** - just describe the behavior
+   - Use MUST/SHOULD/MAY language; each requirement testable
+   - Include an "Out of Scope" section for behavior explored in the mocks but deferred
 
 4. **Structure the requirements doc**:
    ```markdown
@@ -40,11 +43,16 @@ Feature name: $ARGUMENTS
 
    ## 1. <First Major Area>
 
-   - **REQ-XXX-1:** <requirement>
-   - **REQ-XXX-2:** <requirement>
+   - **REQ-XXX-1:** The system MUST <requirement>.
+   - **REQ-XXX-2:** The system SHOULD <requirement>.
 
    ## 2. <Second Major Area>
    ...
+
+   ## Out of Scope
+
+   - <Behavior that came up during mock iteration but is explicitly deferred>
+   - <Variants explored in the mocks that won't ship in this feature>
    ```
 
 5. **Present the requirements** to the user for review.
