@@ -27,14 +27,11 @@ Feature name: $ARGUMENTS
    - Read `mocks.html` to understand the final UI state
    - Review the conversation history for any additional context. If invoked in a new session with no prior context, rely solely on `mocks.context.md` and `mocks.html` — they are the durable record of the mock iteration.
 
-3. **Extract requirements**: Create `<docs-directory>/$ARGUMENTS/requirements.md`. Follow these rules:
+3. **Extract requirements**: Create `<docs-directory>/$ARGUMENTS/requirements.md` with:
    - **Focus only on user-facing behavior** - what the user sees and can do
    - **No implementation details** - don't specify how things should be built
-   - Use `REQ-<CATEGORY>-<N>` identifiers (e.g., `REQ-NAV-1`, `REQ-FORM-3`) — pick a short uppercase category per functional area
-   - Group requirements by functional area
-   - Use MUST/SHOULD/MAY language for clarity
-   - Each requirement should be testable
-   - Include an "Out of Scope" section that captures anything explored in the mocks but explicitly deferred
+   - Use MUST/SHOULD/MAY language; each requirement testable
+   - Include an "Out of Scope" section for behavior explored in the mocks but deferred
    - Include an acceptance criteria summary table at the end
 
 4. **Structure the requirements doc**:
