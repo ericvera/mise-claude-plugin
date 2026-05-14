@@ -21,28 +21,14 @@ Feature name: $ARGUMENTS
 
 1. **Read the overview file** at `<docs-directory>/$ARGUMENTS/implementation_plan/00_overview.md`. This is the ONLY file you read right now — do not read any task files yet.
 
-2. **Build the TODO list** from the `tasks:` YAML block in the overview (the human-readable Task Index table is for humans; do not parse it). The YAML block looks like:
+2. **Build the TODO list** from the Task Index table in the overview. For each row, create a TODO entry with this exact format:
 
-   ```yaml
-   tasks:
-     - file: 01_01_install_diffs.md
-       phase: 1
-     - file: 01_02_replace_changes_tab.md
-       phase: 1
-     - file: 02_01_add_config_fields.md
-       phase: 2
-   ```
-
-   For each entry in `tasks:`, in order, create a TODO entry with this exact format:
-
-   `Read and execute <docs-directory>/$ARGUMENTS/implementation_plan/<file>`
+   `Read and execute <docs-directory>/$ARGUMENTS/implementation_plan/<filename>`
 
    For example:
    - "Read and execute docs/features/my-feature/implementation_plan/01_01_install_diffs.md" — pending
    - "Read and execute docs/features/my-feature/implementation_plan/01_02_replace_changes_tab.md" — pending
    - "Read and execute docs/features/my-feature/implementation_plan/02_01_add_config_fields.md" — pending
-
-   If the YAML block is missing or malformed, stop and ask the user to regenerate `00_overview.md` with `/write-implementation-plan` rather than guessing from the table.
 
 ## Executing tasks
 
