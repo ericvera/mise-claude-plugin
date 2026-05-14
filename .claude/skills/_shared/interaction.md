@@ -30,6 +30,25 @@ Example:
    - b. No
 ```
 
+## Recommendations
+
+Always end your numbered/lettered questions with a recommendation line so the user can accept your read in one reply. If you're genuinely torn, still pick one and say so.
+
+- `expert` mode — recommendation only, single line:
+
+  ```
+  Recommend: 1a, 2a, 3c
+  ```
+
+- `normal` mode — one line per answer with a brief reason:
+
+  ```
+  Recommend:
+  - 1a — keeps the change scoped to the existing module
+  - 2a — tests already cover this path
+  - 3c — inline keeps the diff small
+  ```
+
 ## Other lists
 
 For any list the user might pick from or refer back to, use numbered items (`1.`, `2.`, `3.`) — not bullets — so they can respond by number.
