@@ -54,11 +54,28 @@ Work through the TODO list in order. For each entry:
 4. Mark it as completed
 5. Move to the next entry
 
-If a task fails with a hard blocker you cannot resolve, stop and ask the user how to proceed.
+## Stopping rules
+
+**Stop only on blocking issues.** Run autonomously past everything else.
+
+A blocking issue is:
+- A verification failure that resists the auto-fix attempts in `implement_task.md` (you've tried and the failure is real and outside the scope of this task to fix)
+- A genuine ambiguity in the task file that you cannot resolve from the file itself, the codebase, or `.claude/workflow-config.md`
+- A missing dependency, missing API, or fundamental design contradiction surfaced during implementation
+
+**Not** blocking issues (do not stop for these):
+- Trivial format/lint errors → auto-fix and continue
+- A clean task completion → mark done, move to the next task without confirming
+- A passing self-review → commit and continue
+
+## Plan vs. skill precedence
+
+Task notes in the plan **never** authorize a red build, a skipped verification, or a commit on failed checks. The "every task ends green" rule from `write-implementation-plan` is absolute. If a task file appears to authorize a red intermediate state, treat it as a **planning bug**: stop, report it as a blocker, and ask the user to regenerate the plan with `/write-implementation-plan`. Do not ask the user whether to commit anyway.
 
 ## Do not
 
 - Read task files ahead of time — only read each task file when you start working on it
 - Skip verification steps (quality commands from workflow config, end-to-end tests)
 - Commit if verification is failing
-- Proceed past a failed task without asking the user
+- Ask the user for confirmation between tasks while everything is green — just continue
+- Ask the user which rule wins when a task note conflicts with a skill default — task notes never win on safety/verification rules

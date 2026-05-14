@@ -47,7 +47,11 @@ Feature name: $ARGUMENTS
 
    This distills your understanding into a compact reference so earlier file contents can be compressed out of context before the writing phase.
 
-6. **Ask clarifying questions**: If anything in the design documents is ambiguous or if you see conflicts between the architecture and the actual codebase, ask before writing the plan.
+6. **Ask clarifying questions — once, batched, and only when truly necessary**:
+   - First, **infer defaults aggressively** from `.claude/workflow-config.md` (test conventions, quality commands, migration tooling, related skills) and from the codebase patterns surfaced during exploration. Do not ask the user to confirm anything already specified in those sources.
+   - Then identify any **real ambiguities** that can't be resolved from the docs or code — conflicts between the architecture and the actual codebase, missing information that materially changes the plan structure, etc.
+   - **Batch every remaining question into a single round** before writing the plan. Do not ask checkpoint questions during writing. If no real ambiguities exist, skip this step entirely.
+   - Pure preference questions (naming, formatting, minor structural choices) should be decided by you, not asked.
 
 7. **Write the plan** as a folder of self-contained task files (see Output Structure below).
    - Write all task files yourself sequentially using the Write tool. Do NOT use sub-agents for writing.
@@ -171,6 +175,7 @@ REQ-XXX-1, REQ-XXX-2
 
 ## Design principles
 
+- **Every task ends green**: Every task must leave the build green — quality checks pass, unit tests pass, end-to-end tests in the task's verification checklist pass. A plan that requires a red intermediate state (one task breaks the build, a later task fixes it) is a planning bug. Use **expand-contract** (add new code/columns/methods first, switch callers, then delete old code) or **bundle** the breaking change and its caller fixes into a single task. If you can't find a green ordering, surface that here during planning and rethink task boundaries — never write a plan that tolerates red intermediates.
 - **Thin vertical slices over horizontal layers**: Each phase should produce working, testable functionality end-to-end, not "all backend then all frontend"
 - **Remove before building**: If the plan involves replacing existing code, schedule removal early to avoid building on deprecated patterns
 - **Earlier phases unblock later phases**: Order phases so that infrastructure and foundational components come first, enabling incremental testing
