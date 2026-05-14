@@ -22,12 +22,12 @@ There is no such thing as a "pre-existing failure." If the quality commands or a
    - Complete type hints on all public functions, if the language supports them
    - Do not add unnecessary comments or abstractions beyond what the task requires
 
-4. **Run verification** — these are mandatory, not optional. Auto-fix and continue; do not stop to ask about trivial issues.
-   - Run the project's format command(s) (from workflow config). Formatters rewrite files in place — re-stage and continue.
-   - Run the project's check command(s) for lint and typecheck. If the slot is a list, run in order and stop at the first failure. Fix and re-run until every command in the slot passes.
-   - Run the project's unit test command(s). If tests fail, investigate and fix. Keep iterating until every command in the slot passes.
+4. **Run verification** — these are mandatory, not optional:
+   - Run the project's format command(s) (from workflow config). If it fails, fix and re-run.
+   - Run the project's check command(s) (from workflow config) for lint, typecheck. If it fails, fix the issues and re-run. Keep iterating until it passes.
+   - Run the project's unit test command(s) (from workflow config). If tests fail, investigate and fix. Keep iterating until all tests pass.
    - Run any specific end-to-end tests listed in the task's verification checklist. CRITICAL: If the workflow config specifies an end-to-end test skill, always use that skill to run end-to-end tests — never run them directly. Keep iterating until all tests pass.
-   - For all of the above: keep fixing and re-running until everything passes. Surface a blocker and stop (do not ask the user) only if the failure is outside this task's scope: a missing dependency, a missing API, or a fundamental design contradiction.
+   - For all of the above: keep fixing and re-running until everything passes. If any slot is a list of commands, run them in order and stop at the first failure. Only report failure if you hit a hard blocker that you genuinely cannot resolve (e.g., a dependency that doesn't exist, a missing API, or a fundamental design contradiction).
 
 5. **Walk through the verification checklist** in the task file. Confirm each item passes.
 
