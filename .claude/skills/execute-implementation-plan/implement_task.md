@@ -23,9 +23,9 @@ The default assumption is that a failure is yours to fix. Only treat a failure a
 
 3. **Implement the task** following the implementation details in the task file. Key rules:
    - Follow the patterns and conventions described in the task file
-   - All imports at the top of the file, no inline imports, no relative imports
-   - Complete type hints on all public functions
-   - Do not add unnecessary comments, docstrings, or abstractions beyond what the task requires
+   - Follow any project-specific code conventions listed in `.claude/workflow-config.md` (Code conventions section, if present)
+   - Complete type hints on all public functions, if the language supports them
+   - Do not add unnecessary comments or abstractions beyond what the task requires
 
 4. **Run verification** — these are mandatory, not optional. **Auto-fix and continue; do not stop to ask for trivial issues.**
    - Run the project's format command(s) first (from workflow config). Formatters typically rewrite files in place — that's fine, just re-stage and continue. Do not stop to ask about format-only changes.

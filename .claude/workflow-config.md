@@ -60,6 +60,21 @@ Each slot accepts either a single command or a list of commands. When a list is 
 - **Check (lint + typecheck)**: `<CHECK_COMMAND>`
 - **Unit tests**: `<UNIT_TEST_COMMAND>`
 
+## Code conventions
+
+(Optional.) Project-specific code conventions the implementer should follow on every task, in
+addition to whatever the task file specifies. Keep these short — quality checks (lint, typecheck)
+should catch most style issues automatically.
+
+Example:
+```
+- All imports at the top of the file; no inline imports.
+- No relative imports.
+- Prefer pure functions over classes for new utilities.
+```
+
+(Delete this section if you don't have repo-wide conventions to enforce.)
+
 ## Product identity
 
 The product is called **<PRODUCT_NAME>**. When creating HTML mocks, match the look and feel of

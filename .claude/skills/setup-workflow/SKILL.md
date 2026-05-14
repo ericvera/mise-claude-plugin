@@ -43,6 +43,7 @@ Required:
 
 Optional. Offer to skip; if skipped, delete the surrounding section:
 
+- Code conventions section — repo-wide style/structure rules that go beyond what the linter catches (e.g. import ordering, no relative imports)
 - `<PRODUCT_NAME>` and `<UI_CODE_ROOT>` — only relevant for projects with a UI
 - Test conventions section
 - Related skills section
