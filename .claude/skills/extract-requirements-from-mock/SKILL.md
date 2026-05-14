@@ -32,7 +32,6 @@ Feature name: $ARGUMENTS
    - **No implementation details** - don't specify how things should be built
    - Use MUST/SHOULD/MAY language; each requirement testable
    - Include an "Out of Scope" section for behavior explored in the mocks but deferred
-   - Include an acceptance criteria summary table at the end
 
 4. **Structure the requirements doc**:
    ```markdown
@@ -54,13 +53,6 @@ Feature name: $ARGUMENTS
 
    - <Behavior that came up during mock iteration but is explicitly deferred>
    - <Variants explored in the mocks that won't ship in this feature>
-
-   ## Acceptance Criteria
-
-   | Requirement | Criteria |
-   |-------------|----------|
-   | REQ-XXX-1 | <how to verify this requirement is met> |
-   | REQ-XXX-2 | <how to verify this requirement is met> |
    ```
 
 5. **Present the requirements** to the user for review.
