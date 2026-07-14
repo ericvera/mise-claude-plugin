@@ -23,6 +23,7 @@ The orchestrator verified a green baseline before this plan's first task, so any
    - Follow the entries in the task file's **Guides** section — entries marked `required` are mandatory when they apply. As a backstop, also apply any config Skills & guides entry whose condition matches your work even if the task file missed it (e.g. a voice guide when you write user-facing copy)
    - Complete type hints on all public functions, if the language supports them
    - Do not add unnecessary comments or abstractions beyond what the task requires
+   - `REQ-*` IDs are planning-document traceability only. Never write them into code — no `REQ-*` in comments, identifiers, test names, or strings. Traceability lives in the task file and progress log, not the source.
 
 5. **Run verification** — these are mandatory, not optional:
    - Run the project's format command(s) (from the mise config). If it fails, fix and re-run.
@@ -36,7 +37,7 @@ The orchestrator verified a green baseline before this plan's first task, so any
 
 7. **Self-review your diff** before committing:
    - Run `git diff` to see all your staged and unstaged changes
-   - Check for: missed requirements from the task spec, bugs, security issues (injection, XSS, hardcoded secrets), dead code, leftover debug statements
+   - Check for: missed requirements from the task spec, bugs, security issues (injection, XSS, hardcoded secrets), dead code, leftover debug statements, `REQ-*` references in code
    - Fix anything you find and re-run quality commands and unit tests
 
 8. **Append to the progress log** (creating it with a `# Progress` heading if missing) and include it in the task commit — it is part of the branch's durable record:

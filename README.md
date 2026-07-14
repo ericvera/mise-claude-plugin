@@ -7,7 +7,10 @@ The name comes from _mise en place_ — prep everything before the pan gets hot.
 ## Install
 
 ```
-/plugin marketplace add ericvera/mise-claude-plugin
+/plugin marketplace add https://github.com/ericvera/mise-claude-plugin
+```
+
+```
 /plugin install mise@ericvera
 ```
 
