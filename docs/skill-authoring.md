@@ -1,0 +1,45 @@
+# Skill authoring guide
+
+The conventions this plugin's skill and instruction files follow, and why. They are distilled from Anthropic's [skill authoring best practices](https://platform.claude.com/docs/en/agents-and-tools/agent-skills/best-practices) and [Equipping agents for the real world with Agent Skills](https://www.anthropic.com/engineering/equipping-agents-for-the-real-world-with-agent-skills), applied to this repo's needs. Consult those for the general guidance; this file records the decisions.
+
+_Guidance snapshot: July 2026. When revisiting this guide, start by re-reading the sources above for anything newer, then fold new discoveries in here._
+
+## Writing style
+
+- **Match specificity to fragility, not a house style.** The official dial is "degrees of freedom": open-ended work gets heuristics and prose; fragile, order-dependent work gets explicit rules. This workflow is a state machine with gates — low freedom — so its files spell out every branch. Do not terse-ify them into summary bullets; under-specification is the failure mode here, not verbosity.
+- **Every rule carries one clause of why.** Rules with rationale generalize to cases the rule didn't anticipate ("commit at every checkpoint — so a dead machine costs nothing"). Bare MUST/NEVER lists don't. Keep the why to a clause; a paragraph of justification is padding.
+- **The removal test.** If deleting a sentence would not confuse a competent reader who has the rest of the file, delete it. This is why explain-mode behavior is stated once as a contract rather than repeated as parentheticals at every affected rule — anything derivable from a stated contract goes.
+- **One rule per position.** A sentence buried mid-parenthesis or a fifth clause in a long paragraph is low-salience and gets skipped under load. Load-bearing rules get their own bullet or sentence.
+- **Assume a competent reader.** The model already knows what a regression test or a feature branch is — explain only what it can't infer: this repo's contracts, project-specific constraints, non-obvious sequencing. Challenge every explanatory sentence for whether it earns its tokens.
+- **One term per concept.** "Mise directory", "stage", "route", "gate" mean the same thing in every file. A synonym reads as a new concept and costs the reader a reconciliation. The inverse also holds: prefer plain English over coining a term of art — this repo dropped its "flow" abstraction once every use turned out to mean either "the mise directory" or just "work".
+
+## Structure
+
+- **The plugin's single skill is user-invoked only.** `next` starts a long, stateful process, so it carries `disable-model-invocation: true`: the user types `/mise:next` deliberately, the model can't wander into it mid-task, and it never preloads into the many subagents the workflow spawns. The frontmatter `description` is therefore the user's `/` menu documentation, not a model trigger — still written in third person, what + when (the official discovery format, kept so the field works unchanged if model invocation is ever re-enabled).
+- **Harness substitutions over prose conventions.** `${CLAUDE_SKILL_DIR}` (and `$ARGUMENTS`, `${CLAUDE_PROJECT_DIR}`) are substituted into the SKILL.md body at invocation — anchor commands on them so every invocation is absolute and copy-pasteable, instead of a path-resolution rule the executor must re-apply per command. Substitution never reaches dispatched instruction files, so those still resolve relative paths against the file that mentions them.
+- **Role statement first.** One or two sentences establishing identity and what the file's executor never does ("You are the dispatcher … never do stage work except under a dispatched stage's instructions"). Downstream rules then hang off a principle instead of standing alone.
+- **Progress checklist for long runs.** Multi-phase files open with a copyable `- [ ]` checklist the model tracks during execution. Phase names match the section headings.
+- **Sections in execution order; define before use.** The executor reads top to bottom while working. Modes are defined before anything branches on them. This also holds for contracts over later rules: phrase them as explicit forward references ("wherever a rule below says to ask, report the question instead") rather than gesturing at a set the reader hasn't met yet ("every question is reported") — no line should require the rest of the document to make sense.
+- **Match the construct to the control flow.** Routers (match state → take mapped action) use conditional bullets (`` `true` → … ``); pipelines (single path) use numbered steps. Forcing numbered steps onto branching logic hides the branches; forcing bullets onto a sequence hides the order. This holds recursively: a branch inside a case gets nested bullets, and an arrow separates one condition from its action — an inline chain (`` `true` → no description → continue it ``) leaves the reader unable to tell conditions from actions.
+- **Name recurring contracts.** "Config gate", "in-flight gate", "stopping rules" — a named concept is referenced in three words instead of re-explained, and cross-file references stay stable.
+- **Stopping rules, not continuation prose.** State when to stop ("Stop only at X, Y, Z"), then the default of continuing is unambiguous.
+- **Templates as fenced blocks; examples over descriptions.** Output formats, dispatch prompts, file skeletons, and exact phrasings are shown verbatim (`mise: approve goals`, "Bug fix or new feature?") — an example pins format and tone better than prose describing it.
+- **Progressive disclosure.** SKILL.md stays an overview (well under the official 500-line ceiling); depth lives in `references/`, stage instructions in `stages/`, all linked one level deep. Dispatched files assume `interaction.md` and the config are already loaded instead of re-reading context — SKILL.md states that contract once at the dispatch site; the dispatched files carry only their own Input sections.
+- **"Do not" lists are the only sanctioned redundancy in a file.** They restate safety- and gate-critical rules already stated in context. Don't let convenience rules creep in.
+
+## Agentic-loop patterns
+
+- **Scripts over prose for fragile operations.** Anything with exact invariants (state transitions, hash verification, cascades) is code the model runs (`scripts/state.ts`), never rules the model applies by hand. Prose describes what the script does and when to run it.
+- **Pre-approve the skill's own machinery with `allowed-tools`.** A skill promising unattended runs must not stall on permission prompts for its own state engine or checkpoint commits. Frontmatter `allowed-tools` scopes the grant to the skill's active window and works in every permission mode — unlike relying on the user's session-wide mode (auto mode's classifier is not a guarantee). Pre-approve only the machinery (the state-engine invocation, checkpoint `git add`/`git commit`), never destructive commands — the cleanup deletion stays behind a prompt.
+- **Fresh context per unit of work.** Tasks, critiques, reviews, and acceptance each run in a new subagent — a fresh context catches what the author's context rationalizes away, and a late task gets the same clean context as the first.
+- **Self-contained instructions for fresh contexts.** Redundancy _across_ files is intentional where the reader is a fresh-context subagent: task files repeat background rather than referencing the overview or sibling tasks.
+- **Orchestrators hold summaries, not sources.** An orchestrator reads the overview and subagent reports — never task files or source — so its context survives arbitrarily long plans.
+- **Durable state outside the context window.** Anything a resumed session needs (approvals, completed tasks, decisions) lives in committed files, not conversation memory. Checkpoint commits make any checkout resumable.
+- **Bounded retries with honest failure.** Loops carry an exit ("3 rounds max", "3 consecutive failed attempts with no new hypothesis → report failure"). An honest failure report beats an endless retry.
+
+## Process
+
+- **Start from observed failures, not imagined ones.** Before adding a skill or a major section, run the task without it and note where the model actually goes wrong; write against those failures and keep a scenario or two as informal evals.
+- **Review by tracing, not by reading.** Walk the file as its executor would, in order, with a concrete state in mind. This catches what style review can't: terms used before definition, the same situation handled inconsistently in two places, ambiguity about which command variant to run.
+- **Validate edits against real runs.** After nontrivial changes, exercise the skill (`/mise:next ?` against varied project states is a cheap start) rather than trusting inspection.
+- **Test with the weakest model that will run it.** Instructions that hold for the largest models can fail on smaller ones — users run this plugin on whatever model their session uses, so trace (or run) the files with the cheaper tiers in mind.

@@ -1,0 +1,26 @@
+{
+  "name": "ericvera",
+  "owner": {
+    "name": "Eric Vera"
+  },
+  "description": "Home of mise \u2014 a structured, resumable feature-development workflow built for long autonomous coding runs.",
+  "plugins": [
+    {
+      "name": "mise",
+      "source": "./",
+      "displayName": "mise",
+      "description": "Structured feature-development workflow: human-gated goals + mocks, then autonomous requirements \u2192 plan \u2192 execution with critic-checked stages and a closing acceptance pass",
+      "category": "workflow",
+      "keywords": [
+        "workflow",
+        "feature-development",
+        "requirements",
+        "architecture",
+        "planning",
+        "spec-driven",
+        "autonomous",
+        "tdd"
+      ]
+    }
+  ]
+}
