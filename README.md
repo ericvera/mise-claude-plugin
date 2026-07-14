@@ -16,6 +16,12 @@ The name comes from _mise en place_ — prep everything before the pan gets hot.
 
 Requires Node.js 24+ on your PATH — the workflow's [state engine](docs/state-machine.md) is TypeScript that Node 24+ [runs natively](https://nodejs.org/en/learn/typescript/run-natively), no build step.
 
+### Update
+
+```
+/plugin update mise@ericvera
+```
+
 ## Usage
 
 The plugin exposes a single command. The first run in a project walks you through configuration; `/mise:next setup` revisits it later. All project-specific details (paths, commands, mock conditions, test exceptions) live in the generated `.claude/mise-config.md` — the skill itself stays project-agnostic.
