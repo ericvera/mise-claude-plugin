@@ -57,8 +57,8 @@ The same workflow by actor — the USER column is active exactly twice, at the t
     feedback -----------|--> revise, present again (loop)   |
     explicit yes -------|--> approve goals, commit          |
                         |  - - - unattended from here - - - |
-                        |  write requirements --------------|--> critic: defects or "none"
-                        |  revise until "none", commit <----|---- (3 rounds max, then STOP)
+                        |  write requirements --------------|--> critic: severity-tagged defects
+                        |  revise on blockers, commit <-----|---- (stall: no progress / 5 rounds)
                         |  write plan ----------------------|--> critic (same loop)
                         |                                   |
                         |  for each task: dispatch ---------|--> implementer, then reviewer

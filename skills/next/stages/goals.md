@@ -29,6 +29,8 @@ Read `goals.md` and review it critically — the user would rather find problems
 - **Scope risks**: goals vague enough to invite scope creep?
 - **Ideas**: alternatives or enhancements worth considering?
 
+The critique is working notes, never output — do not present it as a standalone review. Each finding surfaces as a clarifying question in the round below (carrying enough context to answer it), or as a direct edit to `goals.md` when no user call is needed — the approval gate covers it either way.
+
 ### 2. One batched round of questions
 
 This is the last point in the pipeline where a human is guaranteed present — later stages record assumptions instead of asking. Fold everything into one round (question format per `../references/interaction.md`), covering:
@@ -49,6 +51,7 @@ Create `mocks.html` and `mocks.context.md` in the mise directory.
 
 - **Match the product.** If the config has a Mock guidance section, follow it: read the UI code at its UI code root and closely approximate the real look and feel — never guess. Apply any matching Skills & guides entries (voice guides, design guides).
 - In the single HTML file, mock each relevant scenario/state, labeled, with a one-line description of what it demonstrates, shown inside a realistic application window with realistic sample data. Variants of the same idea are cheap here and valuable — offer them.
+- **Cover the canonical states, not just the happy path**: empty (no data yet), loading when meaningful, error — including where errors appear — and, for every submit or action, its success and failure outcomes. A state skipped here becomes a requirements-stage assumption instead of a user decision. How each state renders (toast vs. inline, empty-state style) follows the config's Mock guidance like everything else.
 - Initialize `mocks.context.md`:
 
   ```markdown

@@ -16,10 +16,12 @@ There are exactly two **human gates**: the goals(+mock) gate at the start, and t
 
 ### The critic gate (requirements and plan stages)
 
-1. After writing the artifact, dispatch a **fresh-context critic subagent** (general-purpose Agent, run synchronously). Its prompt: read the artifact and the upstream doc(s) the dispatching stage names, plus any matching Skills & guides entries from `.claude/mise-config.md`, and report a list of concrete defects — the stage names what to check for — or "none". Ignore cosmetic nits.
-2. Defects → revise and re-dispatch a fresh critic. After **3 rounds** without a pass, stop and present the artifact and the remaining defects to the user — an honest stall beats looping.
-3. On a pass, run `node ../scripts/state.ts approve <mise-directory> <stage>`, commit the checkpoint (e.g. `mise: approve requirements`), and continue in-session to the next stage.
-4. If approving `plan` returns `cleared_done`, the engine deleted `implementation_plan/done/` — those tasks were completed under a different plan version, their work is already in the repo (git keeps the files' history), and the revised plan was written against that reality, so its tasks are all pending by definition. Just mention the cleared IDs in the checkpoint report.
+1. After writing the artifact, dispatch a **fresh-context critic subagent** (general-purpose Agent, run synchronously). Its prompt: read the artifact and the upstream doc(s) the dispatching stage names, plus any matching Skills & guides entries from `.claude/mise-config.md`, and report a list of concrete defects — the stage names what to check for — each tagged **blocking** (downstream stages would build the wrong behavior), **minor**, or **informative**. Ignore cosmetic nits.
+2. **Pass = a report with zero blocking findings** — a fresh critic can always find _something_, so "no findings at all" is never the bar. Apply any minor findings worth fixing, without re-dispatching a critic over them.
+3. Blocking findings → revise and re-dispatch a fresh critic. **Stall** when a revision round fails to reduce the blocking count below the previous round's (the fixes aren't converging), or after **5 rounds** total as a backstop.
+4. At a stall, stop and present the artifact, the per-round blocking counts (the trend, not the raw defect list, is the user's decision signal), and the remaining blocking defects — an honest stall beats looping.
+5. On a pass, run `node ../scripts/state.ts approve <mise-directory> <stage>`, commit the checkpoint (e.g. `mise: approve requirements`), and continue in-session to the next stage.
+6. If approving `plan` returns `cleared_done`, the engine deleted `implementation_plan/done/` — those tasks were completed under a different plan version, their work is already in the repo (git keeps the files' history), and the revised plan was written against that reality, so its tasks are all pending by definition. Just mention the cleared IDs in the checkpoint report.
 
 ### Assumptions instead of questions
 
