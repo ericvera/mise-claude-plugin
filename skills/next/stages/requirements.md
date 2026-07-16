@@ -9,7 +9,7 @@ Working directory: `<mise-directory>/` (from the config).
 ## Sources
 
 - `goals.md` — intent, scope, and the clarifying Q&A folded in at the goals gate.
-- `mocks.html` + `mocks.context.md` (full route) — the final UI state plus the Clarifying Q&A and UI Tweaks Log. These are the durable record of the mock iteration; every logged tweak is a decision the requirements must reflect.
+- `mocks.html` + `mocks.context.md` (full route) — the final UI state plus the Clarifying Q&A, New Concepts, and UI Tweaks Log. These are the durable record of the mock iteration; every logged tweak is a decision the requirements must reflect.
 - The codebase — existing functionality the feature integrates with or must preserve.
 
 If `requirements.md` already exists (a reopened stage), revise it against the current sources instead of regenerating.
@@ -46,4 +46,4 @@ This document specifies the user-facing requirements for <feature>.
 
 ## Critic gate
 
-Critic gate per `../references/interaction.md` — this stage's critic checks `requirements.md` against `goals.md` and the mocks for: contradictions, unaddressed goals or logged tweaks, untestable or missing requirements, scope drift.
+Critic gate per `../references/interaction.md` — this stage's critic checks `requirements.md` against `goals.md` and the mocks for: contradictions; unaddressed goals, logged tweaks, or new concepts; untestable or missing requirements; scope drift.
