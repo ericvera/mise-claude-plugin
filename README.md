@@ -24,7 +24,7 @@ Requires Node.js 24+ on your PATH — the workflow's [state engine](docs/state-m
 
 ## Usage
 
-The plugin exposes a single command. The first run in a project walks you through configuration; `/mise:next setup` revisits it later. All project-specific details (paths, commands, mock conditions, test exceptions) live in the generated `.claude/mise-config.md` — the skill itself stays project-agnostic.
+The plugin exposes a single command. The first run in a project walks you through configuration; `/mise:next setup` revisits it later. All project-specific details (paths, branch convention, commands, mock conditions, test exceptions) live in the generated `.claude/mise-config.md` — the skill itself stays project-agnostic.
 
 | Command                       | What it does                                                 |
 | ----------------------------- | ------------------------------------------------------------ |
@@ -37,7 +37,7 @@ You can also just describe a bug or ask "what should I work on next?" in plain c
 
 ## How it works
 
-One piece of work per branch, driven entirely by `/mise:next`. You're needed at exactly two points — everything in between runs unattended, for hours if needed.
+One piece of work per branch, driven entirely by `/mise:next` — starting new work creates the branch from your configured naming convention (or offers to reuse the branch you're on). You're needed at exactly two points — everything in between runs unattended, for hours if needed.
 
 1. **Goals** _(human gate)_ — a conversation that critiques your goal, asks one batched round of questions, and iterates on an HTML mock when configured. You approve once.
 2. **Requirements** — generated from the goals and mock, assumptions recorded explicitly, self-approved by a critic agent.

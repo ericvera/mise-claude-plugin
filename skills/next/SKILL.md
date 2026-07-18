@@ -6,7 +6,7 @@ description: |
   continue work on a feature.
 argument-hint: "[? | setup | what to work on]"
 disable-model-invocation: true
-allowed-tools: Bash(node ${CLAUDE_SKILL_DIR}/scripts/state.ts *) Bash(git add *) Bash(git commit *) Bash(git mv *) Bash(mkdir *)
+allowed-tools: Bash(node ${CLAUDE_SKILL_DIR}/scripts/state.ts *) Bash(git add *) Bash(git commit *) Bash(git mv *) Bash(git branch *) Bash(git switch *) Bash(mkdir *)
 ---
 
 # Next
@@ -56,7 +56,7 @@ Ground rules for everything that follows:
 
 - Unfilled, proceed mode → dispatch setup (see Dispatch below), then resume with the original `$ARGUMENTS`.
 - Unfilled, explain mode → print `Next step: setup — run /mise:next to configure` plus one line naming what's missing, then stop.
-- Partially filled: missing quality-commands values block only the execute dispatch, where this gate re-fires; other missing optional sections never block.
+- Partially filled: missing quality-commands values block only the execute dispatch, and a missing Branch convention blocks only starting new work — this gate re-fires at both points; other missing optional sections never block.
 
 ## The state engine
 
@@ -89,7 +89,10 @@ The mise directory is the single source of truth here: its existence means **wor
 **With a description** (nothing in flight):
 
 1. Classify it: clearly a defect — "fix", "bug", "regression", "crashes" — takes the bugfix route; clearly new behavior is a feature. Ambiguous → ask: "Bug fix or new feature?" — never guess silently.
-2. Start it: create `<mise-directory>/` and write the description verbatim to `goals.md` — the engine's first `--write` run initializes `.workflow-state`. Commit the new directory. Carry the classification into the goals dispatch: the route (`bugfix`, or `full`/`direct` from the config's Mock conditions) is decided by the goals stage and recorded with its approval — `next` never records it.
+2. Ensure a work branch — new work never starts on the default branch. If the config has no Branch convention value, the config gate re-fires: dispatch setup, then resume here. Check `git branch --show-current`:
+   - On the default branch (`main`/`master`) → derive a branch name from the config's Branch convention and the description (the classification picks the pattern when the convention distinguishes fixes from features) and create it: `git switch -c <name>`.
+   - On any other branch → ask: "Use the current branch `<branch>` for this work, or create a new one from it?" — switch only if the user chooses new.
+3. Start it: create `<mise-directory>/` and write the description verbatim to `goals.md` — the engine's first `--write` run initializes `.workflow-state`. Commit the new directory. Carry the classification into the goals dispatch: the route (`bugfix`, or `full`/`direct` from the config's Mock conditions) is decided by the goals stage and recorded with its approval — `next` never records it.
 
 **Backlog prompt:** if the config has a `## Backlog` section, follow its instructions to fetch the top to-do items and present them numbered: "Pick a number, or describe what you want to work on:". Without one, just ask: "Describe what you want to work on:". Treat the answer as a work description and re-enter this section from the top.
 

@@ -16,6 +16,7 @@ restate consumption rules here or in the generated config.
 # Mise Configuration
 
 Mise directory: .mise/
+Branch convention: feat/<slug> for features, fix/<slug> for bug fixes
 
 ## Quality commands
 
@@ -62,6 +63,7 @@ and "To Do", sorted by priority.
 Required — the config is unfilled without these:
 
 - **Mise directory** — the workflow's own working directory (suggest `.mise/`). The single place where in-flight work lives: its stage artifacts and `.workflow-state`, committed to the feature branch as work progresses and deleted in a final cleanup commit. The workflow owns this directory — it must not hold anything else, and its existence means work is in flight.
+- **Branch convention** — how work branches are named, as one line using `<slug>` for a short kebab-case slug derived from the work description (e.g. `feat/<slug>` for features, `fix/<slug>` for bug fixes). Starting new work creates the branch from this convention; a missing value blocks starting new work.
 - **Quality commands** — Format, Check (lint + typecheck), Unit tests. Each slot is one command or a list (nested bullets); a list means: run in order, and when one fails, fix and re-run the slot from the start. Missing or placeholder values block the execute stage. These are _run_ commands only — how tests are written and where they live is Test conventions.
 
 Optional — omit the section entirely when it doesn't apply. A section body may be
