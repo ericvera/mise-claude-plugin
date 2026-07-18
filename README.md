@@ -43,11 +43,11 @@ One piece of work per branch, driven entirely by `/mise:next` — starting new w
 2. **Requirements** — generated from the goals and mock, assumptions recorded explicitly, self-approved by a critic agent.
 3. **Plan** — a fine-grained implementation plan with full-context task files, self-approved by a critic agent.
 4. **Execute** — each task runs in a fresh-context subagent, is reviewed, committed, and tracked so the run can resume from any checkout.
-5. **Acceptance** _(human gate)_ — a requirement-by-requirement checklist; on your confirmation the working docs are cleaned up. The output is the shipped code and tests.
+5. **Acceptance** _(human gate)_ — a requirement-by-requirement checklist; on your confirmation a retrospective mines the run for improvements to your project's guides and config (you adopt or reject each proposal), then the working docs are cleaned up. The output is the shipped code and tests — plus whatever guidance you adopted, so runs get better over time.
 
 Bug fixes take a shortened route: a bug-understanding conversation, then a fixed test-driven plan — write the failing regression test, then fix without touching it.
 
-The same workflow by actor — the USER column is active exactly twice, at the two human gates:
+The same workflow by actor — the USER column is active at exactly two stops, the two human gates (the retrospective's adopt/reject rides the second one):
 
 ```text
   USER                  |  ORCHESTRATOR                     |  SUBAGENTS
@@ -68,7 +68,10 @@ The same workflow by actor — the USER column is active exactly twice, at the t
                         |  acceptance pass -----------------|--> checker: per-item verdicts
   [? confirmed? ] <-----|--- present the checklist          |
     items wrong --------|--> fix, re-run acceptance (loop)  |
-    confirmed ----------|--> cleanup: delete mise dir, done |
+    confirmed ----------|--> retrospective -----------------|--> retro: proposals + evidence
+  [? adopt which? ] <---|--- present proposals              |
+    picks --------------|--> apply picked, commit           |
+                        |  cleanup: delete mise dir, done   |
 ------------------------+-----------------------------------+--------------------
 ```
 

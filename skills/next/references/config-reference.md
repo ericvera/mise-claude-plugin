@@ -80,5 +80,6 @@ would cost more to follow than to read:
 - **Skills & guides** — open-ended list, one entry per line: `name-or-path (skill|doc[, required]): when to use`. `required` means the entry MUST be used whenever its condition matches (e.g. an e2e-runner skill that must never be bypassed).
 - **Database migrations** — the migration generation command, if the project has one.
 - **Backlog** — freeform instructions for fetching top to-do items from an external tracker; read verbatim.
+- **Retrospective** — a top-level value line (next to Branch convention), not a section, and only ever written as `Retrospective: off`: disables the post-acceptance retrospective (a subagent that mines the finished run for guidance improvements the user can adopt). Omit the line entirely to keep the retrospective on — that is the default.
 
 There is no code-conventions section: repo-wide conventions belong in `CLAUDE.md`, which every agent — including fresh-context subagents — loads automatically.

@@ -17,6 +17,7 @@ Before asking about the optional sections, scan the repo for existing sources: g
 5. **Skills & guides** — project skills and guide documents agents should use, one per line: `name-or-path (skill|doc[, required]): when to use`. Prompt specifically for: an e2e test runner (mark `required` if e2e tests must never be run directly), an e2e test writing skill, a manual-testing/screenshot skill, and any design/voice/domain guides. Skip → no section.
 6. **Database migrations** — the migration generation command, if the project has one.
 7. **Backlog** — does the user track work externally (Todoist, Linear, Jira, a markdown file)? If yes, capture how to fetch the top items — tool, query, sections/labels — as freeform prose; it is read verbatim.
+8. **Retrospective** — after acceptance, a subagent proposes improvements to the project's guides and config mined from the run; the user adopts or rejects each. On by default: ask whether to keep it, and write `Retrospective: off` only on a no (keep → no line).
 
 If the user offers code conventions, they belong in `CLAUDE.md`, not the config — offer to add them there.
 

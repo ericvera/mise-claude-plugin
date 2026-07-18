@@ -14,13 +14,17 @@ There are exactly two **human gates**: the goals(+mock) gate at the start, and t
 4. Commit the mise directory (artifacts plus `.workflow-state`), e.g. `mise: approve goals`.
 5. Continue in-session: re-run the state engine report and dispatch the next stage without ending the turn.
 
+### The friction log
+
+`<mise-directory>/_friction.md` is the run's record of friction — the raw material the close-out retrospective (`../stages/retrospective.md`, dispatched by execute after acceptance) mines for guidance improvements. Wherever a rule says to log friction: append one line, `<stage or task>: <what happened>`, creating the file with a `# Friction` heading if missing, and include it in the checkpoint commit that follows. Only the retrospective reads it, so entries are never a prompt tax on later stages.
+
 ### The critic gate (requirements and plan stages)
 
 1. After writing the artifact, dispatch a **fresh-context critic subagent** (general-purpose Agent, run synchronously). Its prompt: read the artifact and the upstream doc(s) the dispatching stage names, plus any matching Skills & guides entries from `.claude/mise-config.md`, and report a list of concrete defects — the stage names what to check for — each tagged **blocking** (downstream stages would build the wrong behavior), **minor**, or **informative**. Ignore cosmetic nits.
 2. **Pass = a report with zero blocking findings** — a fresh critic can always find _something_, so "no findings at all" is never the bar. Apply any minor findings worth fixing, without re-dispatching a critic over them.
 3. Blocking findings → revise and re-dispatch a fresh critic. **Stall** when a revision round fails to reduce the blocking count below the previous round's (the fixes aren't converging), or after **5 rounds** total as a backstop.
-4. At a stall, stop and present the artifact, the per-round blocking counts (the trend, not the raw defect list, is the user's decision signal), and the remaining blocking defects — an honest stall beats looping.
-5. On a pass, run `node ../scripts/state.ts approve <mise-directory> <stage>`, commit the checkpoint (e.g. `mise: approve requirements`), and continue in-session to the next stage.
+4. At a stall, log friction (`critic <stage>: stalled at <n> blocking after <N> rounds`), then stop and present the artifact, the per-round blocking counts (the trend, not the raw defect list, is the user's decision signal), and the remaining blocking defects — an honest stall beats looping.
+5. On a pass that took more than one round, log friction (`critic <stage>: <N> rounds, blocking <count per round>`) — a first-round pass is the expected case, not friction. Then run `node ../scripts/state.ts approve <mise-directory> <stage>`, commit the checkpoint (e.g. `mise: approve requirements`), and continue in-session to the next stage.
 6. If approving `plan` returns `cleared_done`, the engine deleted `implementation_plan/done/` — those tasks were completed under a different plan version, their work is already in the repo (git keeps the files' history), and the revised plan was written against that reality, so its tasks are all pending by definition. Just mention the cleared IDs in the checkpoint report.
 
 ### Assumptions instead of questions
