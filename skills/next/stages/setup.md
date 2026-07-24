@@ -18,9 +18,16 @@ Before asking about the optional sections, scan the repo for existing sources: g
 6. **Database migrations** — the migration generation command, if the project has one.
 7. **Backlog** — does the user track work externally (Todoist, Linear, Jira, a markdown file)? If yes, capture how to fetch the top items — tool, query, sections/labels — as freeform prose; it is read verbatim.
 8. **Retrospective** — after acceptance, a subagent proposes improvements to the project's guides and config mined from the run; the user adopts or rejects each. On by default: ask whether to keep it, and write `Retrospective: off` only on a no (keep → no line).
+9. **Ship** — what the close-out does with the finished branch after the cleanup commit: `pr` (push and open a pull request), `merge` (merge into the default branch — also ask the merge style, squash / merge commit / rebase, and record it, e.g. `Ship: merge (squash)`), or `off` (the user ships manually). Written as a top-level `Ship:` value line; skip → no line → the close-out asks each time.
 
 If the user offers code conventions, they belong in `CLAUDE.md`, not the config — offer to add them there.
 
 ## Write and verify
 
-Write `.claude/mise-config.md` in the reference's generated-file shape, containing only the sections the user filled. Print the final file and confirm it looks right. Once confirmed, commit it (e.g. `mise: setup`) — the config is part of what makes any checkout resumable, same as every other checkpoint.
+Write `.claude/mise-config.md` in the reference's generated-file shape, containing only the sections the user filled. Print the final file and confirm it looks right.
+
+Then ensure the project's `CLAUDE.md` carries the shipping guard, so sessions running outside the workflow don't ship in-flight work — add this line with the configured mise directory substituted (creating `CLAUDE.md` if needed); if a previous mise guard line is already there, update it to the current directory instead of adding another:
+
+> Never open a pull request for, or merge into another branch, any branch whose tree contains `<mise-directory>/` — that work is still in flight; run `/mise:next` on that branch to finish acceptance and cleanup first.
+
+Once confirmed, commit the config and the guard together (e.g. `mise: setup`) — the config is part of what makes any checkout resumable, same as every other checkpoint.

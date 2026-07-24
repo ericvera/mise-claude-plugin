@@ -6,7 +6,7 @@ Create a plan that a developer with zero project context can follow. Each task i
 
 Working directory: `<mise-directory>/` (from the config).
 
-**Revising a plan mid-execution**: completed task files sit in `implementation_plan/done/` and their work is already in the repo (see `_progress.md` and the git log). Plan the *remaining* work from that reality — never re-plan work the repo already contains. Approving the revised plan clears `done/` (its contents are scoped to one plan version), so every task in the new plan is pending by definition.
+**Revising a plan mid-execution**: completed task files sit in `implementation_plan/done/` and their work is already in the repo (see `_progress.md` and the git log). Plan the _remaining_ work from that reality — never re-plan work the repo already contains. Approving the revised plan clears `done/` (its contents are scoped to one plan version), so every task in the new plan is pending by definition.
 
 ## Bugfix route
 

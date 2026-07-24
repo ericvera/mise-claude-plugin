@@ -113,7 +113,8 @@ Stage instruction files:
 Each `next_action` maps to exactly one move:
 
 - **`stage:<name>`** → dispatch that stage's instruction file. Artifact existence is never approval: artifact missing → the stage's instructions create it; present but unapproved → the same instructions review and revise it to approval.
-- **`acceptance`** — all tasks done: dispatch execute, which runs the **acceptance pass** and, on the user's confirmation, the **retrospective** (a subagent mines the run for guidance improvements; the user adopts or rejects each proposal) and then the cleanup: delete `<mise-directory>` and commit the deletion — the artifacts served their purpose; the merged history keeps the code and tests, not the docs. Afterwards offer the backlog prompt.
+- **`acceptance`** — all tasks done: dispatch execute, which runs the **acceptance pass** and, on the user's confirmation, the full close-out: record the confirmation, run the **retrospective** (the user adopts or rejects its proposals), delete `<mise-directory>` (the cleanup commit — the merged history keeps the code and tests, not the docs), and ship per the config's `Ship` value. Afterwards offer the backlog prompt.
+- **`close_out`** — the acceptance pass was already confirmed and recorded, but the close-out didn't finish: dispatch execute, which skips the pass and resumes at the retrospective, cleanup, and ship.
 - **`stage:execute`** → the config gate re-fires here: if the config's Format / Check / Unit-tests commands are missing or still placeholders, dispatch setup first. Otherwise dispatch execute — it skips tasks already in `implementation_plan/done/`; `next` never manages individual tasks.
 
 ## Report, then dispatch
@@ -125,7 +126,7 @@ Stage: <one line, noting the route and any unapproved or changed-since-approval 
 Next step: <stage> — run /mise:next to proceed
 ```
 
-When the next step is a question rather than a stage (a gate above, the acceptance pass), the `Next step:` line states that question instead.
+When the next step is a question rather than a stage (a gate above, the acceptance pass), the `Next step:` line states that question instead; for `close_out` it names the remaining close-out steps (retrospective, cleanup, ship).
 
 Proceed mode — print, then dispatch:
 

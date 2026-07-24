@@ -254,7 +254,11 @@ test("report: hand-edited fields make the state file an error", () => {
     })
 
     const { error } = fails("report", dir)
-    assert.match(error, /broken/, `expected broken error for ${JSON.stringify(bad)}`)
+    assert.match(
+      error,
+      /broken/,
+      `expected broken error for ${JSON.stringify(bad)}`,
+    )
   }
 })
 
@@ -347,7 +351,11 @@ test("approve: changed plan re-approval clears done/", () => {
   assert.equal(result.changed_reapproval, true)
   assert.deepEqual(result.cleared_done, ["01_01"])
   assert.equal(existsSync(join(dir, "implementation_plan", "done")), false)
-  assert.deepEqual(ok("report", dir).tasks_remaining, ["01_01", "01_02", "01_03"])
+  assert.deepEqual(ok("report", dir).tasks_remaining, [
+    "01_01",
+    "01_02",
+    "01_03",
+  ])
 })
 
 test("approve: plan re-approval after a cascade also clears done/", () => {
@@ -378,6 +386,140 @@ test("approve: unchanged plan re-approval keeps done/", () => {
   assert.equal(result.changed_reapproval, false)
   assert.equal(result.cleared_done, undefined)
   assert.deepEqual(ok("report", dir).tasks_done, ["01_01"])
+})
+
+// --- acceptance ---------------------------------------------------------------
+
+test("approve: acceptance flips next_action to close_out", () => {
+  const dir = directRoute("plan")
+  markDone(dir, "01_01_setup.md")
+  markDone(dir, "01_02_build.md")
+  assert.equal(ok("report", dir).next_action, "acceptance")
+
+  const result = ok("approve", dir, "acceptance")
+  assert.equal(result.approved, "acceptance")
+  assert.match(result.hash, /^[0-9a-f]{40}$/)
+  assert.equal(ok("report", dir).next_action, "close_out")
+
+  const state = JSON.parse(readFileSync(join(dir, ".workflow-state"), "utf8"))
+  assert.equal(state.accepted, result.hash)
+})
+
+test("approve: acceptance with tasks remaining fails", () => {
+  const dir = directRoute("plan")
+  markDone(dir, "01_01_setup.md")
+
+  const { error } = fails("approve", dir, "acceptance")
+  assert.match(error, /tasks remaining \(01_02\)/)
+})
+
+test("approve: acceptance with unapproved stages fails", () => {
+  const dir = directRoute("requirements")
+  const { error } = fails("approve", dir, "acceptance")
+  assert.match(error, /not validly approved \(plan\)/)
+})
+
+test("approve: route on acceptance fails", () => {
+  const dir = directRoute("plan")
+  markDone(dir, "01_01_setup.md")
+  markDone(dir, "01_02_build.md")
+  fails("approve", dir, "acceptance", "route=direct")
+})
+
+test("report: doc edits after acceptance re-run the pass", () => {
+  const dir = directRoute("plan")
+  markDone(dir, "01_01_setup.md")
+  markDone(dir, "01_02_build.md")
+  ok("approve", dir, "acceptance")
+
+  // Editing goals cascades away the later approvals; re-walking the stages
+  // clears done/ (different plan approval), and redoing the tasks lands back
+  // on identical artifacts — but the goals bytes changed, so the recorded
+  // acceptance is stale and the pass must re-run.
+  writeFileSync(join(dir, "goals.md"), "# edited after acceptance")
+  ok("report", dir, "--write")
+  ok("approve", dir, "goals", "route=direct")
+  ok("approve", dir, "requirements")
+  ok("approve", dir, "plan")
+  markDone(dir, "01_01_setup.md")
+  markDone(dir, "01_02_build.md")
+
+  assert.equal(ok("report", dir).next_action, "acceptance")
+})
+
+test("report: an observed mismatch clears the acceptance record", () => {
+  const dir = directRoute("plan")
+  markDone(dir, "01_01_setup.md")
+  markDone(dir, "01_02_build.md")
+  ok("approve", dir, "acceptance")
+
+  const overview = join(dir, "implementation_plan", "00_overview.md")
+  const original = readFileSync(overview, "utf8")
+  writeFileSync(overview, original + "\n<!-- tweak -->\n")
+  assert.equal(ok("report", dir, "--write").accepted_cleared, true)
+  writeFileSync(overview, original)
+
+  // The overview is byte-identical to what was accepted, but the observed
+  // mismatch dropped the record — a revert cannot resurrect an acceptance.
+  assert.equal(ok("report", dir).next_action, "acceptance")
+})
+
+test("approve: a changed approval clears the acceptance record", () => {
+  const dir = directRoute("plan")
+  markDone(dir, "01_01_setup.md")
+  markDone(dir, "01_02_build.md")
+  ok("approve", dir, "acceptance")
+
+  writeFileSync(join(dir, "requirements.md"), "# reqs v2")
+  assert.equal(ok("approve", dir, "requirements").accepted_cleared, true)
+
+  const state = JSON.parse(readFileSync(join(dir, ".workflow-state"), "utf8"))
+  assert.equal(state.accepted, undefined)
+})
+
+test("approve: an unchanged re-approval keeps the acceptance record", () => {
+  const dir = directRoute("plan")
+  markDone(dir, "01_01_setup.md")
+  markDone(dir, "01_02_build.md")
+  ok("approve", dir, "acceptance")
+
+  const result = ok("approve", dir, "plan")
+  assert.equal(result.accepted_cleared, undefined)
+  assert.equal(ok("report", dir).next_action, "close_out")
+})
+
+test("report: a done/ change alone makes the acceptance stale", () => {
+  const dir = directRoute("plan")
+  markDone(dir, "01_01_setup.md")
+  markDone(dir, "01_02_build.md")
+  ok("approve", dir, "acceptance")
+
+  // A stray done file changes no stage hash and no task verdict, but it is
+  // part of the delivered state the acceptance hashed — the pass re-runs.
+  markDone(dir, "09_09_stray.md")
+  assert.equal(ok("report", dir).next_action, "acceptance")
+})
+
+test("report: invalid accepted hash is broken state", () => {
+  const dir = miseDir({
+    "goals.md": "# goals",
+    ".workflow-state": JSON.stringify({ accepted: "nothex" }),
+  })
+
+  const { error } = fails("report", dir)
+  assert.match(error, /broken/)
+})
+
+test("report: accepted without approvals is broken state", () => {
+  const dir = miseDir({
+    "goals.md": "# goals",
+    ".workflow-state": JSON.stringify({
+      accepted: "0123456789abcdef0123456789abcdef01234567",
+    }),
+  })
+
+  const { error } = fails("report", dir)
+  assert.match(error, /broken/)
 })
 
 // --- CLI ------------------------------------------------------------------------

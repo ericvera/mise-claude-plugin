@@ -19,6 +19,14 @@
 //                                       stage's approval; a plan approval
 //                                       whose hash doesn't match the recorded
 //                                       one also clears the done/ directory.
+//   approve <mise-dir> acceptance       record the user's acceptance
+//                                       confirmation, hashed over every route
+//                                       stage's artifact plus the done/
+//                                       listing — any later doc or task
+//                                       change makes it stale, and an
+//                                       observed mismatch or changed approval
+//                                       deletes it outright, so the
+//                                       acceptance pass re-runs.
 //
 // A task is done exactly when its file has been moved to
 // <mise-dir>/implementation_plan/done/ — completion is read straight from the
@@ -53,6 +61,7 @@ const ARTIFACTS: Record<Stage, string[]> = {
 interface State {
   route?: Route
   approved: Partial<Record<Stage, string>>
+  accepted?: string
 }
 
 const TASK_FILE = /^(\d{2}_\d{2})_.*\.md$/
@@ -121,7 +130,7 @@ function parseState(text: string): { state?: State; problems: string[] } {
   const record = data as Record<string, unknown>
 
   for (const key of Object.keys(record)) {
-    if (key !== "route" && key !== "approved") {
+    if (key !== "route" && key !== "approved" && key !== "accepted") {
       problems.push(`unknown field "${key}"`)
     }
   }
@@ -158,8 +167,23 @@ function parseState(text: string): { state?: State; problems: string[] } {
     }
   }
 
+  if ("accepted" in record) {
+    if (
+      typeof record.accepted !== "string" ||
+      !SHA1_HEX.test(record.accepted)
+    ) {
+      problems.push("invalid accepted hash")
+    } else {
+      state.accepted = record.accepted
+    }
+  }
+
   if (state.approved.goals && !state.route) {
     problems.push("goals approval recorded without a route")
+  }
+
+  if (state.accepted && !state.approved.goals) {
+    problems.push("accepted recorded without approvals")
   }
 
   return problems.length ? { problems } : { state, problems: [] }
@@ -177,6 +201,7 @@ function serializeState(state: State): string {
   const out = {
     ...(state.route ? { route: state.route } : {}),
     ...(Object.keys(approved).length ? { approved } : {}),
+    ...(state.accepted ? { accepted: state.accepted } : {}),
   }
 
   return JSON.stringify(out, null, 2) + "\n"
@@ -223,6 +248,33 @@ function doneTaskIds(dir: string): string[] {
   }
 
   return ids
+}
+
+// Acceptance is recorded over everything it verified: each route stage's
+// artifact hash plus the sorted done/ filenames. Any later doc edit or task
+// change makes the recorded value stale, so a confirmed acceptance can never
+// survive the work changing underneath it. Null while any artifact is missing.
+function hashAcceptance(dir: string, route?: string): string | null {
+  const h = createHash("sha1")
+
+  for (const stage of stageOrder(route)) {
+    const stageHash = hashStage(dir, stage)
+
+    if (!stageHash) {
+      return null
+    }
+
+    h.update(stageHash)
+  }
+
+  const done = join(dir, "implementation_plan/done")
+  const names = existsSync(done)
+    ? readdirSync(done)
+        .filter((f) => TASK_FILE.test(f))
+        .sort()
+    : []
+
+  return h.update("\0" + names.join("\0")).digest("hex")
 }
 
 function loadState(dir: string): { state: State; file: "ok" | "new" } {
@@ -314,6 +366,17 @@ function report(dir: string, write: boolean): object {
     }
   }
 
+  // A mismatch also invalidates any recorded acceptance: it was confirmed
+  // against the doc that just changed. Deleting the record — rather than
+  // trusting the composite hash alone — keeps a later revert of the doc to
+  // its approved bytes from resurrecting an acceptance for re-executed work.
+  let accepted_cleared = false
+
+  if (mismatchAt >= 0 && state.accepted) {
+    delete state.accepted
+    accepted_cleared = true
+  }
+
   let next_action: string
   let task_index_ids: string[] | null = null
   let tasks_done: string[] = []
@@ -329,13 +392,16 @@ function report(dir: string, write: boolean): object {
     tasks_remaining = task_index_ids.filter((t) => !tasks_done.includes(t))
 
     if (task_index_ids.length && tasks_remaining.length === 0) {
-      next_action = "acceptance"
+      next_action =
+        state.accepted && state.accepted === hashAcceptance(dir, state.route)
+          ? "close_out"
+          : "acceptance"
     } else {
       next_action = "stage:execute"
     }
   }
 
-  const dirty = file === "new" || reopened.length > 0
+  const dirty = file === "new" || reopened.length > 0 || accepted_cleared
 
   if (write && dirty) {
     writeState(dir, state)
@@ -347,6 +413,7 @@ function report(dir: string, write: boolean): object {
     route: state.route ?? null,
     stages,
     ...(reopened.length ? { reopened } : {}),
+    ...(accepted_cleared ? { accepted_cleared } : {}),
     ...(task_index_ids ? { task_index_ids, tasks_done, tasks_remaining } : {}),
     next_action,
     wrote: write && dirty,
@@ -416,6 +483,16 @@ function approve(dir: string, stage: Stage, route?: string): object {
     }
   }
 
+  // An approval recording a different hash than before — a changed
+  // re-approval, or a first approval after a cascade dropped the entry —
+  // re-gates a doc the acceptance was confirmed against: drop the record so
+  // a byte-identical revert can't resurrect it.
+  const accepted_cleared = Boolean(state.accepted && previous !== current)
+
+  if (accepted_cleared) {
+    delete state.accepted
+  }
+
   writeState(dir, state)
 
   return {
@@ -425,12 +502,52 @@ function approve(dir: string, stage: Stage, route?: string): object {
     changed_reapproval: changed,
     ...(reopened.length ? { reopened } : {}),
     ...(cleared_done.length ? { cleared_done } : {}),
+    ...(accepted_cleared ? { accepted_cleared } : {}),
   }
+}
+
+// The confirmation record for the acceptance pass: valid only while every
+// route stage is validly approved and every Task Index ID is done — the same
+// conditions under which report says `acceptance`.
+function approveAcceptance(dir: string): object {
+  const { state } = loadState(dir)
+
+  const unapproved = stageOrder(state.route).filter(
+    (s) => !state.approved[s] || state.approved[s] !== hashStage(dir, s),
+  )
+
+  if (unapproved.length) {
+    fail(
+      `cannot approve acceptance: stages not validly approved (${unapproved.join(", ")})`,
+    )
+  }
+
+  const ids = taskIndexIds(dir)
+  const done = doneTaskIds(dir)
+  const remaining = ids.filter((t) => !done.includes(t))
+
+  if (!ids.length || remaining.length) {
+    fail(
+      ids.length
+        ? `cannot approve acceptance: tasks remaining (${remaining.join(", ")})`
+        : "cannot approve acceptance: the plan overview has no Task Index",
+    )
+  }
+
+  // Non-null: every stage just hashed successfully above.
+  const current = hashAcceptance(dir, state.route)!
+
+  state.accepted = current
+  writeState(dir, state)
+
+  return { approved: "acceptance", hash: current }
 }
 
 function asStage(value: string | undefined): Stage {
   if (!value || !STAGES.includes(value as Stage)) {
-    fail(`expected a stage (${STAGES.join(", ")}), got "${value ?? ""}"`)
+    fail(
+      `expected a stage (${STAGES.join(", ")}, acceptance), got "${value ?? ""}"`,
+    )
   }
 
   return value as Stage
@@ -464,7 +581,15 @@ switch (cmd) {
       .find((a) => a.startsWith("route="))
       ?.slice("route=".length)
 
-    result = approve(dir, asStage(stage), route)
+    if (stage === "acceptance") {
+      if (route) {
+        fail("route accompanies only the goals approval, not acceptance")
+      }
+
+      result = approveAcceptance(dir)
+    } else {
+      result = approve(dir, asStage(stage), route)
+    }
     break
   }
 

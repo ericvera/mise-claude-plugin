@@ -2,7 +2,7 @@
   "name": "mise",
   "displayName": "mise",
   "description": "Structured feature-development workflow for Claude Code: goals (+ optional mock) gated by you, then requirements \u2192 implementation plan \u2192 execution running autonomously with fresh-context critic and reviewer agents, a test-driven bugfix route, and resumable state.",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "author": {
     "name": "Eric Vera"
   },

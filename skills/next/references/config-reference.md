@@ -17,6 +17,7 @@ restate consumption rules here or in the generated config.
 
 Mise directory: .mise/
 Branch convention: feat/<slug> for features, fix/<slug> for bug fixes
+Ship: pr
 
 ## Quality commands
 
@@ -81,5 +82,6 @@ would cost more to follow than to read:
 - **Database migrations** — the migration generation command, if the project has one.
 - **Backlog** — freeform instructions for fetching top to-do items from an external tracker; read verbatim.
 - **Retrospective** — a top-level value line (next to Branch convention), not a section, and only ever written as `Retrospective: off`: disables the post-acceptance retrospective (a subagent that mines the finished run for guidance improvements the user can adopt). Omit the line entirely to keep the retrospective on — that is the default.
+- **Ship** — a top-level value line (next to Branch convention), not a section: `pr` | `merge (<style>)` | `off` — what the execute close-out does with the finished branch after the cleanup commit (push and open a pull request, merge into the default branch, or leave shipping to the user). For `merge`, the style — `squash`, `merge commit`, or `rebase` — is the user's setup choice, recorded in the value, never assumed. Omit the line → the close-out asks each time.
 
 There is no code-conventions section: repo-wide conventions belong in `CLAUDE.md`, which every agent — including fresh-context subagents — loads automatically.
