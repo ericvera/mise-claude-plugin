@@ -11,11 +11,10 @@
 // step and keeps each result in its context.
 //
 // Commands (each prints JSON to stdout; failures print {error} and exit 1):
-//   report <dir> [--write]   in_flight, route, next_action, tasks, amendments;
+//   report <dir> [--write]   in_flight, next_action, tasks, amendments;
 //                            --write initializes a fresh state file
 //   mark <dir> <step> done|skipped [reason]   execute is never marked: it is
 //                            derived from spec.md `## Task index` vs tasks/done/
-//   route <dir> quick|standard|full
 //   amend <dir> "<text>"     +1 amendment, reopens adherence and sweep, logs it
 //   log <dir> <json>         appends one timestamped ledger event
 //   tally <dir>…             counts archived ledgers by event, step and detail,
@@ -34,7 +33,6 @@ type StepState = "done" | "skipped" | null
 
 interface State {
   version: 3
-  route: string
   started: string
   steps: Record<string, StepState>
   skipReason: Record<string, string>
@@ -42,11 +40,10 @@ interface State {
 }
 
 const STEPS = "goals spec critic execute adherence sweep review gate".split(" ")
-const ROUTES = ["quick", "standard", "full"]
 const EVENTS = "run spawn finding stop feedback skip amend gate close".split(
   " ",
 )
-const FIELDS = "version route started steps skipReason amendments".split(" ")
+const FIELDS = "version started steps skipReason amendments".split(" ")
 
 const TASK_FILE = /^(\d{2}_\d{2})_.*\.md$/
 const TASK_REF = /(\d{2}_\d{2})_[^\s`]*\.md/g
@@ -72,7 +69,6 @@ function emptySteps(): Record<string, StepState> {
 function freshState(): State {
   return {
     version: 3,
-    route: "standard",
     started: new Date().toISOString(),
     steps: emptySteps(),
     skipReason: {},
@@ -106,8 +102,6 @@ function parseState(text: string): { state?: State; problems: string[] } {
     if (!(key in r)) problems.push(`missing field "${key}"`)
 
   if (r.version !== 3) problems.push(`unsupported version ${str(r.version)}`)
-  if (!ROUTES.includes(r.route as string))
-    problems.push(`invalid route ${str(r.route)}`)
 
   if (typeof r.started !== "string" || Number.isNaN(Date.parse(r.started)))
     problems.push("invalid started timestamp")
@@ -143,7 +137,6 @@ function parseState(text: string): { state?: State; problems: string[] } {
   return {
     state: {
       version: 3,
-      route: r.route as string,
       started: r.started as string,
       steps,
       skipReason,
@@ -280,7 +273,6 @@ function report(dir: string, rest: string[]): object {
 
   return {
     in_flight: true,
-    route: state.route,
     next_action: nextAction(state, remaining),
     tasks: {
       done: done.length,
@@ -318,20 +310,6 @@ function mark(dir: string, rest: string[]): object {
     appendLedger(dir, { event: "skip", step, reason: reason || null })
 
   return { step, state: value, ...(reason ? { reason } : {}) }
-}
-
-function route(dir: string, rest: string[]): object {
-  const [value] = rest
-
-  if (!ROUTES.includes(value))
-    fail(`expected ${ROUTES.join("|")}, got ${str(value)}`)
-
-  const { state } = loadState(dir)
-
-  state.route = value
-  writeState(dir, state)
-
-  return { route: state.route }
 }
 
 // An amendment changes a recorded decision: nothing is re-approved or
@@ -481,7 +459,6 @@ type Command = (dir: string, rest: string[]) => object
 const COMMANDS: Record<string, Command | undefined> = {
   report,
   mark,
-  route,
   amend,
   log,
   tally,
@@ -491,6 +468,6 @@ const [cmd, dir, ...rest] = process.argv.slice(2)
 const command = COMMANDS[cmd ?? ""]
 
 if (!command || !dir)
-  fail("usage: state.ts <report|mark|route|amend|log|tally> <dir> [args]")
+  fail("usage: state.ts <report|mark|amend|log|tally> <dir> [args]")
 
 console.log(JSON.stringify(command(dir, rest), null, 2))

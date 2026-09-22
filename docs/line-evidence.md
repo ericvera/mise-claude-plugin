@@ -14,11 +14,10 @@ Verify with `node tools/check-line-evidence.mjs <path to this checkout>` from th
 | skills/next/SKILL.md                       | You are the **driver**: read the state, run                                                                    | E-002, E-005                |
 | skills/next/SKILL.md                       | Empty → continue the work in flight, or                                                                        | D-01 (M03)                  |
 | skills/next/SKILL.md                       | `setup` → run `${CLAUDE_SKILL_DIR}/stages/setup.md`, then stop.                                                | O-07                        |
-| skills/next/SKILL.md                       | `quick` or `full`, alone or before a description                                                               | O-13, D-02                  |
 | skills/next/SKILL.md                       | Anything else → a work description.                                                                            | D-01 (M03)                  |
 | skills/next/SKILL.md                       | Read `.claude/mise-config.md`; its Mise directory value is `<mise-dir>`                                        | O-07, E-066                 |
 | skills/next/SKILL.md                       | Needs Node 24+; a missing or older `node`,                                                                     | E-058                       |
-| skills/next/SKILL.md                       | Re-run it after every `mark`, `route`, `amend` and                                                             | E-006, O-13                 |
+| skills/next/SKILL.md                       | Re-run it after every `mark`, `amend` and finished                                                             | E-006, O-13                 |
 | skills/next/SKILL.md                       | Never read, write or repair `<mise-dir>/.workflow-state` or `<mise-dir>/ledger.jsonl`                          | E-058                       |
 | skills/next/SKILL.md                       | Commit `<mise-dir>` whenever a step is marked —                                                                | E-073 (M05)                 |
 | skills/next/SKILL.md                       | Delete `<mise-dir>` only in the close step.                                                                    | O-12, D-10                  |
@@ -38,13 +37,13 @@ Verify with `node tools/check-line-evidence.mjs <path to this checkout>` from th
 | skills/next/flow.md                        | Write the owner's description verbatim to `<mise-dir>/goals.md`.                                               | E-048, E-049                |
 | skills/next/flow.md                        | Pick the branch from `git branch --show-current`: on                                                           | E-081, D-01 (M10)           |
 | skills/next/flow.md                        | Classify the work as a bug fix or                                                                              | O-05, O-13                  |
-| skills/next/flow.md                        | Commit, then `log {"event":"run","repo":…,"branch":…,"route":…,"version":…}`.                                  | E-073, O-09                 |
-| skills/next/flow.md                        | Skip when: no decision in this work is                                                                         | O-13, E-049                 |
+| skills/next/flow.md                        | Commit, then `log {"event":"run","repo":…,"branch":…,"version":…}`.                                            | E-073, O-09                 |
+| skills/next/flow.md                        | Skip when: never. Its parts skip on their                                                                      | D-13, O-13, E-049           |
 | skills/next/flow.md                        | Read `goals.md` for contradictions, unstated assumptions, and scope                                            | E-049, E-048                |
-| skills/next/flow.md                        | Ask one round at a time, in SKILL.md's                                                                         | E-050, E-049                |
+| skills/next/flow.md                        | A question remains → ask one round at a                                                                        | E-050, E-049                |
 | skills/next/flow.md                        | The config's Mock conditions match → build `<mise-dir>/mock/`                                                  | E-078, E-052                |
 | skills/next/flow.md                        | Fold the answers into `goals.md` and record under                                                              | E-049                       |
-| skills/next/flow.md                        | Present the goals (and the mock) and ask                                                                       | E-051, O-13                 |
+| skills/next/flow.md                        | Print at most 3 lines — the issue,                                                                             | D-13, E-051, O-13           |
 | skills/next/flow.md                        | Skip when: the work fits one implementer's context                                                             | O-03, O-13                  |
 | skills/next/flow.md                        | Read the code you need yourself. Spawn up                                                                      | E-061, O-03                 |
 | skills/next/flow.md                        | Write `<mise-dir>/spec.md`:                                                                                    | O-03, O-13, O-04            |

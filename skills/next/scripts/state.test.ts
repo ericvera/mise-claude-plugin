@@ -128,7 +128,6 @@ test("report: goals.md without a state file is a fresh start", () => {
 
   assert.deepEqual(ok("report", dir), {
     in_flight: true,
-    route: "standard",
     next_action: "step:goals",
     tasks: { done: 0, remaining: 0, next_id: null, next_file: null },
     amendments: 0,
@@ -141,7 +140,6 @@ test("report: --write initializes the state file", () => {
   const written = state(dir)
 
   assert.equal(written.version, 3)
-  assert.equal(written.route, "standard")
   assert.match(written.started, ISO)
   assert.deepEqual(written.steps, {
     goals: null,
@@ -368,25 +366,6 @@ test("mark: execute is derived, never marked", () => {
   assert.equal(state(dir).steps.execute, null)
 })
 
-// --- route --------------------------------------------------------------------
-
-test("route: sets the recorded route", () => {
-  const dir = started()
-
-  assert.deepEqual(ok("route", dir, "quick"), { route: "quick" })
-  assert.equal(ok("report", dir).route, "quick")
-  assert.equal(ok("route", dir, "full").route, "full")
-  assert.equal(state(dir).route, "full")
-})
-
-test("route: unknown routes are rejected", () => {
-  const dir = started()
-
-  assert.match(fails("route", dir, "direct").error, /quick\|standard\|full/)
-  fails("route", dir)
-  assert.equal(state(dir).route, "standard")
-})
-
 // --- amend --------------------------------------------------------------------
 
 test("amend: reopens adherence and sweep and counts up", () => {
@@ -443,7 +422,11 @@ test("amend: empty text is rejected", () => {
 test("log: appends timestamped events to ledger.jsonl", () => {
   const dir = started()
 
-  const entry = ok("log", dir, JSON.stringify({ event: "run", route: "quick" }))
+  const entry = ok(
+    "log",
+    dir,
+    JSON.stringify({ event: "run", branch: "fix-x" }),
+  )
   assert.match(entry.t, ISO)
   assert.equal(entry.event, "run")
 
@@ -451,7 +434,7 @@ test("log: appends timestamped events to ledger.jsonl", () => {
 
   const events = ledger(dir)
   assert.equal(events.length, 2)
-  assert.equal(events[0].route, "quick")
+  assert.equal(events[0].branch, "fix-x")
   assert.deepEqual(Object.keys(events[1]), ["t", "event", "role", "round"])
 })
 
@@ -586,7 +569,6 @@ test("report: unparseable state file is an error, never repaired", () => {
 test("report: hand-edited state files are errors", () => {
   const good = {
     version: 3,
-    route: "standard",
     started: "2026-09-22T00:00:00.000Z",
     steps: { goals: null },
     skipReason: {},
@@ -595,7 +577,6 @@ test("report: hand-edited state files are errors", () => {
 
   for (const bad of [
     { ...good, version: 2 },
-    { ...good, route: "direct" },
     { ...good, started: "whenever" },
     { ...good, amendments: -1 },
     { ...good, amendments: "two" },
@@ -606,7 +587,7 @@ test("report: hand-edited state files are errors", () => {
     { ...good, steps: "goals" },
     { ...good, skipReason: { spec: "unskipped step" } },
     { ...good, skipReason: "none" },
-    { version: 3, route: "standard" },
+    { version: 3, started: good.started },
   ]) {
     const dir = miseDir({
       "goals.md": "# goals",
@@ -639,7 +620,6 @@ test("commands: a missing mise directory fails", () => {
     fails("mark", "/nonexistent/mise-dir", "goals", "done").error,
     /not found/,
   )
-  fails("route", "/nonexistent/mise-dir", "quick")
   fails("amend", "/nonexistent/mise-dir", "text")
 })
 
@@ -654,6 +634,6 @@ test("cli: missing arguments and unknown commands fail with usage", () => {
 test("cli: the retired v2 commands fail", () => {
   const dir = started()
 
-  fails("approve", dir, "goals", "route=direct")
+  fails("approve", dir, "goals", "done")
   fails("approve", dir, "acceptance")
 })

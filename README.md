@@ -26,14 +26,12 @@ Requires Node.js 24+ on your PATH — the state engine is TypeScript that Node [
 
 ## Usage
 
-| Command                       | What it does                                                                 |
-| ----------------------------- | ---------------------------------------------------------------------------- |
-| `/mise:next`                  | Continue the work in flight, or pick new work from your backlog              |
-| `/mise:next some description` | Start a bug fix or feature from that description                             |
-| `/mise:next quick …`          | Same, skipping the goals questions, the spec, the critic and per-task review |
-| `/mise:next full …`           | Same, skipping nothing                                                       |
-| `/mise:next setup`            | (Re)run project configuration                                                |
-| `/mise:retro`                 | Tally the run ledgers and propose changes under the change protocol          |
+| Command                       | What it does                                                        |
+| ----------------------------- | ------------------------------------------------------------------- |
+| `/mise:next`                  | Continue the work in flight, or pick new work from your backlog     |
+| `/mise:next some description` | Start a bug fix or feature from that description                    |
+| `/mise:next setup`            | (Re)run project configuration                                       |
+| `/mise:retro`                 | Tally the run ledgers and propose changes under the change protocol |
 
 Project details live in the generated `.claude/mise-config.md`. Required: `Mise directory`, `Branch convention`, `Ship`, and the `## Quality commands` (Format, Check, Unit tests; optional Task tests and Build). Optional sections: `## Mock conditions`, `## Mock guidance`, `## Test exceptions`, `## Skills & guides`, `## Adherence`, `## Ledger`, `## Backlog`, `## Review notes`. Setup asks only for the required values.
 
@@ -41,18 +39,18 @@ Project details live in the generated `.claude/mise-config.md`. Required: `Mise 
 
 One piece of work per branch. The ten steps run in order; each has a **skip condition** the driver answers at the start and again after any amendment.
 
-| Step               | Skips when                                | What runs                                                                                                                                                                                                                  |
-| ------------------ | ----------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **start**          | never                                     | your description goes to `goals.md` verbatim; branch per your convention; bug fix or feature                                                                                                                               |
-| **goals** _(you)_  | no decision only you can make, and not UI | one round of questions at a time; an HTML mock when `## Mock conditions` match; your approval                                                                                                                              |
-| **spec**           | the work fits one implementer's context   | `spec.md` (What, Design, Hard-to-undo, Task index) and one file per task; a `requirements.md` only past 8 tasks; up to 3 `explore` subagents for facts                                                                     |
-| **critic**         | no spec and nothing hard to undo          | rounds over the spec; stops when a round finds nothing new that blocks; hard cap 5                                                                                                                                         |
-| **execute**        | never                                     | per task: `implementer` (a bug fix's regression test first, seen to fail) → task tests → `reviewer` (per task when the work spans 3+ modules, else over the whole diff in 20-file batches) → at most 2 fix rounds → commit |
-| **adherence**      | no `## Adherence` section                 | one `adherence` subagent per rule family per 20-file batch of the diff, file by file, against your own past review notes; fixes until its log is clean                                                                     |
-| **sweep**          | never                                     | one `sweep` subagent: things the spec retires are gone; instruction and config files the diff never touched are still right                                                                                                |
-| **review** _(you)_ | never                                     | `review.md` — one line per task, 60 at most — says what changed and how to verify it; the run waits until you say done                                                                                                     |
-| **gate**           | never                                     | Build, Format, Check, Unit tests, e2e through its required guide — once, one repair, one re-run                                                                                                                            |
-| **close**          | never                                     | ledger copied to `## Ledger`; mise directory removed; ship per `Ship`                                                                                                                                                      |
+| Step               | Skips when                              | What runs                                                                                                                                                                                                                                 |
+| ------------------ | --------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **start**          | never                                   | your description goes to `goals.md` verbatim; branch per your convention; bug fix or feature                                                                                                                                              |
+| **goals** _(you)_  | never — only its parts skip             | questions one round at a time when a decision is yours to make; an HTML mock when `## Mock conditions` match; then a statement of at most 3 lines — the issue, the approach, what the run will skip — and the run waits for your approval |
+| **spec**           | the work fits one implementer's context | `spec.md` (What, Design, Hard-to-undo, Task index) and one file per task; a `requirements.md` only past 8 tasks; up to 3 `explore` subagents for facts                                                                                    |
+| **critic**         | no spec and nothing hard to undo        | rounds over the spec; stops when a round finds nothing new that blocks; hard cap 5                                                                                                                                                        |
+| **execute**        | never                                   | per task: `implementer` (a bug fix's regression test first, seen to fail) → task tests → `reviewer` (per task when the work spans 3+ modules, else over the whole diff in 20-file batches) → at most 2 fix rounds → commit                |
+| **adherence**      | no `## Adherence` section               | one `adherence` subagent per rule family per 20-file batch of the diff, file by file, against your own past review notes; fixes until its log is clean                                                                                    |
+| **sweep**          | never                                   | one `sweep` subagent: things the spec retires are gone; instruction and config files the diff never touched are still right                                                                                                               |
+| **review** _(you)_ | never                                   | `review.md` — one line per task, 60 at most — says what changed and how to verify it; the run waits until you say done                                                                                                                    |
+| **gate**           | never                                   | Build, Format, Check, Unit tests, e2e through its required guide — once, one repair, one re-run                                                                                                                                           |
+| **close**          | never                                   | ledger copied to `## Ledger`; mise directory removed; ship per `Ship`                                                                                                                                                                     |
 
 **Review stage.** Feedback is handled by what it changes: a **point** fix is batched; a **pattern** ("everywhere") is listed in full before it is fixed; a changed **decision** becomes a dated amendment to the spec, and only the affected work becomes new tasks — finished tasks stay finished, nothing is re-approved or re-critiqued; a **voided** approach gets one offer of a re-plan, your call. The model states a factual objection once, then does what you decide.
 

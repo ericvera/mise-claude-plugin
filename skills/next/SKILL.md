@@ -4,7 +4,7 @@ description: |
   Runs the next step in the mise workflow. Use when the user reports a
   bug or defect to fix, asks what to work on next, or wants to start or
   continue work on a feature.
-argument-hint: "[setup | quick | full | what to work on]"
+argument-hint: "[setup | what to work on]"
 disable-model-invocation: true
 allowed-tools: Bash(node ${CLAUDE_SKILL_DIR}/scripts/state.ts *) Bash(git add *) Bash(git commit *) Bash(git mv *) Bash(git branch *) Bash(git switch *) Bash(git diff --shortstat *) Bash(mkdir *)
 ---
@@ -17,7 +17,6 @@ You are the **driver**: read the state, run the step it names, and spawn every u
 
 - Empty → continue the work in flight, or start new work.
 - `setup` → run `${CLAUDE_SKILL_DIR}/stages/setup.md`, then stop.
-- `quick` or `full`, alone or before a description → carry the rest as the description, and `route <mise-dir> quick|full` once the run is open.
 - Anything else → a work description.
 
 ## Load
@@ -31,7 +30,7 @@ node ${CLAUDE_SKILL_DIR}/scripts/state.ts report <mise-dir>
 ```
 
 - Needs Node 24+; a missing or older `node`, or an `{error}`, → relay it and stop.
-- Re-run it after every `mark`, `route`, `amend` and finished task, and act on the new `next_action` in the same turn.
+- Re-run it after every `mark`, `amend` and finished task, and act on the new `next_action` in the same turn.
 - Never read, write or repair `<mise-dir>/.workflow-state` or `<mise-dir>/ledger.jsonl` by hand.
 - Commit `<mise-dir>` whenever a step is marked — subject `mise: <what happened>` — so any checkout of the branch resumes the run.
 - Delete `<mise-dir>` only in the close step.

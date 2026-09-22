@@ -1,6 +1,6 @@
 # Flow
 
-Ten steps, in order. Answer every **Skip when** line at the start of the run and again after each amendment; a yes → `mark <mise-dir> <step> skipped "<reason>"` before that step's turn comes. The reported route `quick` skips the goals questions, the spec, the critic and per-task review; `full` skips nothing.
+Ten steps, in order. Answer every **Skip when** line at the start of the run and again after each amendment; a yes → `mark <mise-dir> <step> skipped "<reason>"` before that step's turn comes.
 
 Log as you go: `log <mise-dir> '<json>'` after every spawn (`{"event":"spawn","role":…,"step":…,"round":…,"minutes":…,"verdict":…}`), every finding (`{"event":"finding","source":…,"round":…,"category":…,"changed":…}`), every stop at the owner (`{"event":"stop","step":…,"reason":…,"waitMinutes":…}`), and every gate command (`{"event":"gate","command":…,"seconds":…,"pass":…}`).
 
@@ -11,17 +11,17 @@ Skip when: never.
 1. Write the owner's description verbatim to `<mise-dir>/goals.md`.
 2. Pick the branch from `git branch --show-current`: on `main` or `master`, derive a name from the config's Branch convention and `git switch -c` it; on any other branch that has no commits past the default branch and a name the convention fits, use it without asking; on any other branch otherwise, ask whether to use it or to branch from it.
 3. Classify the work as a bug fix or a feature, asking "Bug fix or new feature?" only where the description leaves it ambiguous. A bug fix's `goals.md` also records the repro steps, the expected behavior, and where its regression test goes.
-4. Commit, then `log {"event":"run","repo":…,"branch":…,"route":…,"version":…}`.
+4. Commit, then `log {"event":"run","repo":…,"branch":…,"version":…}`.
 
 ## goals
 
-Skip when: no decision in this work is one only the owner can make, and the work is not UI.
+Skip when: never. Its parts skip on their own: the questions when no decision in this work is one only the owner can make, the mock when the config's Mock conditions do not match.
 
 1. Read `goals.md` for contradictions, unstated assumptions, and scope the description leaves open. Each point that needs the owner's call becomes a question below; everything else becomes an edit to `goals.md`.
-2. Ask one round at a time, in SKILL.md's question format: the owner's calls, the edge cases and error behavior the spec would otherwise have to guess at, and what is out of scope.
+2. A question remains → ask one round at a time, in SKILL.md's question format: the owner's calls, the edge cases and error behavior the spec would otherwise have to guess at, and what is out of scope.
 3. The config's Mock conditions match → build `<mise-dir>/mock/` as a static HTML mock of every screen and state the work touches, following the config's Mock guidance, and iterate on it with the owner. Ask about behavior and states; never about spacing, wording or layout.
 4. Fold the answers into `goals.md` and record under `## Assumptions` every inference you made instead of asking.
-5. Present the goals (and the mock) and ask "Approve, or what should change?" Feedback, questions and silence are not approval. On approval: `mark <mise-dir> goals done`, commit.
+5. Print at most 3 lines — the issue, the fix or approach you propose, what the run will skip — with the mock when there is one, and ask "Approve, or what should change?" Feedback, questions and silence are not approval. On approval: `mark <mise-dir> goals done`, commit.
 
 ## spec
 
