@@ -1,7 +1,5 @@
 # Mise Configuration
 
-Mise directory: .mise/
-Branch convention: feat/<slug> for features, fix/<slug> for bug fixes
 Ship: merge (squash)
 
 ## Quality commands
@@ -19,7 +17,3 @@ Ship: merge (squash)
 
 - docs/skill-authoring.md (doc, required): when writing or editing any skill instruction file
 - docs/line-evidence.md (doc, required): when adding, removing or moving a line in a shipped skill file
-
-## Review notes
-
-Delta Review notes file for the branch, per the `delta:review-notes` skill's contract.

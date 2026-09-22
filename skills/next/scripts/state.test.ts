@@ -116,7 +116,7 @@ function started(files: Record<string, string> = {}): string {
 // --- report: in-flight detection ---------------------------------------------
 
 test("report: missing directory is not in flight", () => {
-  assert.deepEqual(ok("report", "/nonexistent/mise-dir"), { in_flight: false })
+  assert.deepEqual(ok("report", "/nonexistent/.mise"), { in_flight: false })
 })
 
 test("report: empty directory is not in flight", () => {
@@ -151,7 +151,6 @@ test("report: --write initializes the state file", () => {
     review: null,
     gate: null,
   })
-  assert.deepEqual(written.skipReason, {})
   assert.equal(written.amendments, 0)
 })
 
@@ -250,9 +249,9 @@ test("report: only the Task index section supplies ids", () => {
 
 test("report: a skipped spec makes the work one implicit task", () => {
   const dir = started()
-  ok("mark", dir, "goals", "skipped", "no owner decision")
-  ok("mark", dir, "spec", "skipped", "fits one implementer context")
-  ok("mark", dir, "critic", "skipped", "no spec and nothing hard to undo")
+  ok("mark", dir, "goals", "skipped")
+  ok("mark", dir, "spec", "skipped")
+  ok("mark", dir, "critic", "skipped")
 
   let report = ok("report", dir)
   assert.equal(report.next_action, "step:execute")
@@ -267,7 +266,7 @@ test("report: a skipped spec makes the work one implicit task", () => {
 test("report: with no spec, an added task file reopens execute", () => {
   const dir = started()
   for (const step of ["goals", "spec", "critic"])
-    ok("mark", dir, step, "skipped", "one-line fix")
+    ok("mark", dir, step, "skipped")
 
   markDone(dir, "01_01_fix.md")
   ok("mark", dir, "adherence", "done")
@@ -310,39 +309,28 @@ test("mark: done and skipped are recorded in the state", () => {
     step: "goals",
     state: "done",
   })
-  assert.deepEqual(ok("mark", dir, "spec", "skipped", "one", "module"), {
+  assert.deepEqual(ok("mark", dir, "spec", "skipped"), {
     step: "spec",
     state: "skipped",
-    reason: "one module",
   })
 
   const written = state(dir)
   assert.equal(written.steps.goals, "done")
   assert.equal(written.steps.spec, "skipped")
-  assert.deepEqual(written.skipReason, { spec: "one module" })
 })
 
-test("mark: skipping appends a skip event to the ledger", () => {
+// The reason for a skip is the ledger's, logged by the driver: mark neither
+// stores it nor writes the event, and a reason passed here is a mistake.
+test("mark: a skip carries no reason and writes no ledger event", () => {
   const dir = started()
-  ok("mark", dir, "goals", "done")
-  ok("mark", dir, "critic", "skipped", "nothing hard to undo")
+  ok("mark", dir, "critic", "skipped")
 
-  const events = ledger(dir)
-  assert.equal(events.length, 1)
-  assert.match(events[0].t, ISO)
-  assert.equal(events[0].event, "skip")
-  assert.equal(events[0].step, "critic")
-  assert.equal(events[0].reason, "nothing hard to undo")
-})
-
-test("mark: re-marking a skipped step done drops its reason", () => {
-  const dir = started()
-  ok("mark", dir, "adherence", "skipped", "no Adherence section")
-  ok("mark", dir, "adherence", "done")
-
-  const written = state(dir)
-  assert.equal(written.steps.adherence, "done")
-  assert.deepEqual(written.skipReason, {})
+  assert.deepEqual(ledger(dir), [])
+  assert.match(
+    fails("mark", dir, "sweep", "skipped", "nothing retired").error,
+    /takes no reason/,
+  )
+  assert.equal(state(dir).steps.sweep, null)
 })
 
 test("mark: unknown steps and states are rejected", () => {
@@ -374,7 +362,7 @@ test("amend: reopens adherence and sweep and counts up", () => {
   markDone(dir, "01_01_setup.md")
   markDone(dir, "01_02_build.md")
   ok("mark", dir, "adherence", "done")
-  ok("mark", dir, "sweep", "skipped", "nothing retired")
+  ok("mark", dir, "sweep", "skipped")
   ok("mark", dir, "review", "done")
   assert.equal(ok("report", dir).next_action, "step:gate")
 
@@ -390,7 +378,6 @@ test("amend: reopens adherence and sweep and counts up", () => {
   assert.equal(written.steps.adherence, null)
   assert.equal(written.steps.sweep, null)
   assert.equal(written.steps.review, "done") // review is not reopened
-  assert.deepEqual(written.skipReason, {})
 
   assert.equal(ok("amend", dir, "and the retry").amendments, 2)
 })
@@ -449,7 +436,7 @@ test("log: rejects unknown events and malformed input", () => {
   fails("log", dir, JSON.stringify(["run"]))
   fails("log", dir, "{not json")
   fails("log", dir)
-  fails("log", "/nonexistent/mise-dir", JSON.stringify({ event: "run" }))
+  fails("log", "/nonexistent/.mise", JSON.stringify({ event: "run" }))
   assert.deepEqual(ledger(dir), [])
 })
 
@@ -468,6 +455,7 @@ function jsonl(...entries: object[]): string {
 
 test("tally: counts archived ledgers by event, step and detail", () => {
   const finding = { event: "finding", step: "execute", source: "reviewer" }
+  const feedback = { event: "feedback", step: "review", kind: "point" }
   const one = miseDir({
     "feat-a.jsonl": jsonl(
       { ...finding, changed: true },
@@ -477,6 +465,8 @@ test("tally: counts archived ledgers by event, step and detail", () => {
         step: "critic",
         reason: "no spec, nothing hard to undo",
       },
+      { ...feedback, issue: "no retry on the 429 path" },
+      { ...feedback, issue: "empty state shows the spinner forever" },
     ),
     "feat-b.jsonl": jsonl({ ...finding, changed: true }),
     "notes.md": "not a ledger",
@@ -493,8 +483,8 @@ test("tally: counts archived ledgers by event, step and detail", () => {
 
   assert.equal(out.ledgers, 3)
   assert.equal(out.projects, 2)
-  assert.equal(out.events, 5)
-  assert.equal(out.rows_total, 2)
+  assert.equal(out.events, 7)
+  assert.equal(out.rows_total, 3)
   assert.deepEqual(out.rows[0], {
     event: "finding",
     step: "execute",
@@ -503,8 +493,17 @@ test("tally: counts archived ledgers by event, step and detail", () => {
     runs: 2,
     projects: 1,
   })
-  // Free text never splits a row: the two skips group on event and step alone.
+  // Free text never splits a row: the two skips group on event and step alone,
+  // and the two feedback items on their kind, whatever their `issue` says.
   assert.deepEqual(out.rows[1], {
+    event: "feedback",
+    step: "review",
+    detail: "kind=point",
+    count: 2,
+    runs: 1,
+    projects: 1,
+  })
+  assert.deepEqual(out.rows[2], {
     event: "skip",
     step: "critic",
     detail: "",
@@ -571,7 +570,6 @@ test("report: hand-edited state files are errors", () => {
     version: 3,
     started: "2026-09-22T00:00:00.000Z",
     steps: { goals: null },
-    skipReason: {},
     amendments: 0,
   }
 
@@ -585,8 +583,7 @@ test("report: hand-edited state files are errors", () => {
     { ...good, steps: { mock: "done" } },
     { ...good, steps: { execute: "done" } },
     { ...good, steps: "goals" },
-    { ...good, skipReason: { spec: "unskipped step" } },
-    { ...good, skipReason: "none" },
+    { ...good, skipReason: {} }, // the retired v2/v3.0 field
     { version: 3, started: good.started },
   ]) {
     const dir = miseDir({
@@ -617,10 +614,10 @@ test("report: a lost state file with artifacts is an error", () => {
 
 test("commands: a missing mise directory fails", () => {
   assert.match(
-    fails("mark", "/nonexistent/mise-dir", "goals", "done").error,
+    fails("mark", "/nonexistent/.mise", "goals", "done").error,
     /not found/,
   )
-  fails("amend", "/nonexistent/mise-dir", "text")
+  fails("amend", "/nonexistent/.mise", "text")
 })
 
 // --- CLI ----------------------------------------------------------------------

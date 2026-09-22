@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 // State engine for the `next` workflow skill (mise v3).
 //
-// Single reader/writer of `<mise-dir>/.workflow-state` and the only appender of
-// `<mise-dir>/ledger.jsonl`. Node >= 24 runs it directly: `node state.ts <cmd>`.
+// Single reader/writer of `.mise/.workflow-state` and the only appender of
+// `.mise/ledger.jsonl`. Node >= 24 runs it directly: `node state.ts <cmd>`.
 // No hashes, no cascade: a broken or hand-edited state file is an error, never
 // rebuilt by inference.
 //
@@ -13,8 +13,9 @@
 // Commands (each prints JSON to stdout; failures print {error} and exit 1):
 //   report <dir> [--write]   in_flight, next_action, tasks, amendments;
 //                            --write initializes a fresh state file
-//   mark <dir> <step> done|skipped [reason]   execute is never marked: it is
-//                            derived from spec.md `## Task index` vs tasks/done/
+//   mark <dir> <step> done|skipped   execute is never marked: it is derived
+//                            from spec.md `## Task index` vs tasks/done/; a
+//                            skip's reason belongs to the ledger, not the state
 //   amend <dir> "<text>"     +1 amendment, reopens adherence and sweep, logs it
 //   log <dir> <json>         appends one timestamped ledger event
 //   tally <dir>…             counts archived ledgers by event, step and detail,
@@ -35,7 +36,6 @@ interface State {
   version: 3
   started: string
   steps: Record<string, StepState>
-  skipReason: Record<string, string>
   amendments: number
 }
 
@@ -43,14 +43,14 @@ const STEPS = "goals spec critic execute adherence sweep review gate".split(" ")
 const EVENTS = "run spawn finding stop feedback skip amend gate close".split(
   " ",
 )
-const FIELDS = "version started steps skipReason amendments".split(" ")
+const FIELDS = "version started steps amendments".split(" ")
 
 const TASK_FILE = /^(\d{2}_\d{2})_.*\.md$/
 const TASK_REF = /(\d{2}_\d{2})_[^\s`]*\.md/g
 
 const BROKEN_HINT =
   "restore .workflow-state from the last `mise:` checkpoint commit " +
-  "(e.g. `git checkout <mise-directory>/.workflow-state`), or delete the " +
+  "(e.g. `git checkout .mise/.workflow-state`), or delete the " +
   "mise directory to abandon the work and start over"
 
 function fail(message: string): never {
@@ -71,7 +71,6 @@ function freshState(): State {
     version: 3,
     started: new Date().toISOString(),
     steps: emptySteps(),
-    skipReason: {},
     amendments: 0,
   }
 }
@@ -93,7 +92,6 @@ function parseState(text: string): { state?: State; problems: string[] } {
   const r = data as Record<string, unknown>
   const problems: string[] = []
   const steps = emptySteps()
-  const skipReason: Record<string, string> = {}
 
   for (const key of Object.keys(r))
     if (!FIELDS.includes(key)) problems.push(`unknown field "${key}"`)
@@ -122,16 +120,6 @@ function parseState(text: string): { state?: State; problems: string[] } {
       else problems.push(`invalid value for steps.${key}`)
     }
 
-  if (!isObject(r.skipReason)) problems.push("skipReason is not an object")
-  else
-    for (const [key, value] of Object.entries(r.skipReason as object)) {
-      if (steps[key] !== "skipped")
-        problems.push(`skipReason.${key} without a skipped step`)
-      else if (typeof value !== "string")
-        problems.push(`invalid skipReason.${key}`)
-      else skipReason[key] = value
-    }
-
   if (problems.length) return { problems }
 
   return {
@@ -139,7 +127,6 @@ function parseState(text: string): { state?: State; problems: string[] } {
       version: 3,
       started: r.started as string,
       steps,
-      skipReason,
       amendments: r.amendments as number,
     },
     problems: [],
@@ -284,9 +271,10 @@ function report(dir: string, rest: string[]): object {
   }
 }
 
+// A skip's reason is ledger material — the driver logs the `skip` event with it
+// — so the state keeps the value alone and nothing here reads a reason back.
 function mark(dir: string, rest: string[]): object {
   const [step, value] = rest
-  const reason = rest.slice(2).join(" ")
 
   if (!STEPS.includes(step))
     fail(`expected a step (${STEPS.join(", ")}), got ${str(step)}`)
@@ -297,19 +285,15 @@ function mark(dir: string, rest: string[]): object {
   if (value !== "done" && value !== "skipped")
     fail(`expected done|skipped, got ${str(value)}`)
 
+  if (rest.length > 2)
+    fail(`mark takes no reason — log a skip event with it instead`)
+
   const { state } = loadState(dir)
 
   state.steps[step] = value
-  delete state.skipReason[step]
-
-  if (value === "skipped" && reason) state.skipReason[step] = reason
-
   writeState(dir, state)
 
-  if (value === "skipped")
-    appendLedger(dir, { event: "skip", step, reason: reason || null })
-
-  return { step, state: value, ...(reason ? { reason } : {}) }
+  return { step, state: value }
 }
 
 // An amendment changes a recorded decision: nothing is re-approved or
@@ -318,17 +302,14 @@ function mark(dir: string, rest: string[]): object {
 function amend(dir: string, rest: string[]): object {
   const text = rest.join(" ").trim()
 
-  if (!text) fail('usage: state.ts amend <mise-dir> "<text>"')
+  if (!text) fail('usage: state.ts amend .mise "<text>"')
 
   const { state } = loadState(dir)
   const reopened = ["adherence", "sweep"]
 
   state.amendments += 1
 
-  for (const step of reopened) {
-    state.steps[step] = null
-    delete state.skipReason[step]
-  }
+  for (const step of reopened) state.steps[step] = null
 
   writeState(dir, state)
   appendLedger(dir, { event: "amend", text })
@@ -361,7 +342,7 @@ function log(dir: string, rest: string[]): object {
 
 // Fifty accumulated ledgers run to tens of thousands of lines, so the retro
 // never opens one: it reads these counts. Rows group on the fields that repeat
-// across runs; free text (reason, text, verbatim) is left out, since one row
+// across runs; free text (reason, text, issue) is left out, since one row
 // per distinct wording would be the ledger again rather than an aggregate.
 const DETAIL = "role source category changed kind verdict command pass".split(
   " ",
