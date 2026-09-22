@@ -1,0 +1,17 @@
+#repo	sanitizedBranch	branch	wasMiseRun	evidence
+okven	eric-attribution-3	eric/attribution-3	true	git -C okven log 55587370 -- .mise = 643 commits (PR #77 head oid, branch deleted)
+okven	feat-specials-fixes	feat/specials-fixes	true	git -C okven log 0e0f4c60 -- .mise = 169 commits (PR #68 head oid)
+okven	fix-menu-pin	fix/menu-pin	true	git -C okven log c355780b -- .mise = 51 commits (PR #76 head oid)
+okven	feat-close-out-orders	feat/close-out-orders	true	git -C okven log 1e34c4a2 -- .mise = 49 commits (PR #69 head oid)
+okven	feat-voice-notes	feat/voice-notes	true	git -C okven log 7e9c9590 -- .mise = 65 commits (PR #74 head oid)
+okven	fix-voice-note-not-transcribed	fix/voice-note-not-transcribed	true	git -C okven log 56cf2b53 -- .mise = 27 commits (PR #75 head oid)
+okven	feat-first-time-offer	feat/first-time-offer	true	git -C okven log feat/first-time-offer -- .mise = 82 commits (live branch)
+okven	eric-attribution-2	eric/attribution-2	true	git -C okven ls-tree -r refs/review/eric/attribution-2 = 34 paths under .mise/ (branch and PR gone)
+okven	feat-migrate-firebase-kit	feat/migrate-firebase-kit	true	gh api repos/okven-llc/okven/commits?sha=357ab282&path=.mise -> 357ab2821 "mise: cleanup" 2026-08-20
+okven	feat-backfill-order-history	feat/backfill-order-history	true	gh api ...commits?sha=89895b0c&path=.mise -> 89895b0c1 "mise: cleanup" 2026-08-20
+okven	eric-lo-de-siempre	eric/lo-de-siempre	true	gh api ...commits?sha=6b760cff&path=.mise -> 3b4c8591e "mise: cleanup" 2026-08-19
+okven	eric-fab-snippet	eric/fab-snippet	true	gh api ...commits?sha=d578df38&path=.mise -> d578df389 "mise: cleanup" 2026-07-27
+okven	fix-menu-preview-changes	fix/menu-preview-changes	true	gh api ...commits?sha=1583dc94&path=.mise -> 1583dc941 "mise: cleanup" 2026-08-24
+ericvera.dev	feat-blog	feat/blog	true	git -C ericvera.dev log feat/blog -- .mise = 92 commits
+firebase-kit	feat-keepalive-caller	feat/keepalive-caller	true	git -C firebase-kit ls-tree -r refs/review/feat/keepalive-caller = 16 paths under .mise/ (branch deleted)
+mise-claude-plugin	feat-next-major-improvements	feat/next-major-improvements	true	git -C mise-claude-plugin log feat/next-major-improvements -- .mise = 45 commits

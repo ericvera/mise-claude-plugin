@@ -1,0 +1,363 @@
+# claude-code-platform
+
+Status: UNVERIFIED — citation check did not run (session limit). Quotes are as reported by the research agent.
+
+| id                        | strength        | date | claim                                                                                                                                                                                                                                                                                          | url                                                                            |
+| ------------------------- | --------------- | ---- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| R-claude-code-platform-01 | vendor-guidance |      | A plugin's agents/ directory is a first-class component: plugin subagents support model, effort, maxTurns, tools, disallowedTools, skills, memory, background, omitClaudeMd and isolation in frontmatter, so "critic runs on Opus at high effort, read-only" is declarative config, not prose. | https://code.claude.com/docs/en/plugins-reference#agents                       |
+| R-claude-code-platform-02 | vendor-guidance |      | Plugin-shipped agents cannot carry hooks, mcpServers, or permissionMode — those three fields are ignored. Per-role deterministic gates must ship as plugin-level hooks instead of agent frontmatter.                                                                                           | https://code.claude.com/docs/en/plugins-reference#agents                       |
+| R-claude-code-platform-03 | vendor-guidance |      | effort is a real subagent frontmatter field with documented values, overriding the session effort level.                                                                                                                                                                                       | https://code.claude.com/docs/en/sub-agents#supported-frontmatter-fields        |
+| R-claude-code-platform-04 | vendor-guidance |      | Subagent model resolution has a documented precedence, and CLAUDE_CODE_SUBAGENT_MODEL is only a default that agent frontmatter beats; CLAUDE_CODE_SUBAGENT_MODEL_FORCE=1 overrides every definition.                                                                                           | https://code.claude.com/docs/en/sub-agents#choose-a-model                      |
+| R-claude-code-platform-05 | vendor-guidance |      | Plugin agents are addressed by a plugin-scoped identifier derived from the file path, and subfolders become part of the name.                                                                                                                                                                  | https://code.claude.com/docs/en/sub-agents#choose-the-subagent-scope           |
+| R-claude-code-platform-06 | vendor-guidance |      | A plugin agent with broken or missing frontmatter still loads — silently, under its filename, with every field ignored. This is the opposite of project/user agents, which are skipped.                                                                                                        | https://code.claude.com/docs/en/plugins-reference#agents                       |
+| R-claude-code-platform-07 | vendor-guidance |      | A subagent's skills: field preloads full skill content into the subagent at startup, which is the platform's supported way to give a role its standing instructions without pasting them into the delegation prompt.                                                                           | https://code.claude.com/docs/en/sub-agents#preload-skills-into-subagents       |
+| R-claude-code-platform-08 | vendor-guidance |      | Non-fork subagents start fresh but still load the whole CLAUDE.md hierarchy; omitClaudeMd: true opts a role out of user/project/local CLAUDE.md while managed policy files still load.                                                                                                         | https://code.claude.com/docs/en/sub-agents#what-loads-at-startup               |
+| R-claude-code-platform-09 | vendor-guidance |      | Background subagents — the default for spawned agents — run with a reduced built-in tool set, and the same definition resolves to different tools in foreground vs background.                                                                                                                 | https://code.claude.com/docs/en/sub-agents#available-tools                     |
+| R-claude-code-platform-10 | vendor-guidance |      | A plugin can ship default settings, but only two keys are honored — `agent` and `subagentStatusLine`. There is no documented way for a plugin to ship env vars, permissions, or other settings.                                                                                                | https://code.claude.com/docs/en/plugins#ship-default-settings-with-your-plugin |
+| R-claude-code-platform-11 | vendor-guidance |      | Skill frontmatter already covers most of what mise enforces in prose: allowed-tools, disallowed-tools, model, effort, context: fork, agent, background, hooks, paths, disable-model-invocation, user-invocable.                                                                                | https://code.claude.com/docs/en/skills#frontmatter-reference                   |
+| R-claude-code-platform-12 | vendor-guidance |      | Skill descriptions are truncated at 1,536 characters in the listing, and invoked skill content stays in context across turns, so body length is a recurring per-turn cost.                                                                                                                     | https://code.claude.com/docs/en/skills#frontmatter-reference                   |
+| R-claude-code-platform-13 | vendor-guidance |      | Progressive disclosure is a supported pattern: supporting files in the skill directory load only when referenced, with explicit size guidance for SKILL.md.                                                                                                                                    | https://code.claude.com/docs/en/skills#add-supporting-files                    |
+| R-claude-code-platform-14 | vendor-guidance |      | Invoked skill content survives compaction only within a budget: 5,000 tokens kept per skill, 25,000 tokens combined, newest first.                                                                                                                                                             | https://code.claude.com/docs/en/skills#skill-content-lifecycle                 |
+| R-claude-code-platform-15 | vendor-guidance |      | context: fork runs a skill as a subagent of a chosen agent type with the skill body as its prompt, backgrounded by default; background: false waits in-turn and keeps the full tool set.                                                                                                       | https://code.claude.com/docs/en/skills#run-skills-in-a-subagent                |
+| R-claude-code-platform-16 | vendor-guidance |      | A skill's allowed-tools grant is scoped to the invoking turn only and clears on your next message; it grants, never restricts.                                                                                                                                                                 | https://code.claude.com/docs/en/skills#pre-approve-tools-for-a-skill           |
+| R-claude-code-platform-17 | vendor-guidance |      | Skills can inject live shell output at render time with !`command`, and the plugin-root/skill-dir variables substitute in both the body and Bash rules in allowed-tools.                                                                                                                       | https://code.claude.com/docs/en/skills#inject-dynamic-context                  |
+| R-claude-code-platform-18 | vendor-guidance |      | Plugins ship hooks in hooks/hooks.json using ${CLAUDE_PLUGIN_ROOT}, with access to every lifecycle event and all five handler types (command, http, mcp_tool, prompt, agent).                                                                                                                  | https://code.claude.com/docs/en/plugins-reference#hooks                        |
+| R-claude-code-platform-19 | vendor-guidance |      | Only exit code 2 blocks through the exit code alone; exit 1 is treated as a non-blocking error and the action proceeds.                                                                                                                                                                        | https://code.claude.com/docs/en/hooks#other-exit-codes                         |
+| R-claude-code-platform-20 | vendor-guidance |      | PostToolUse cannot block a tool call, but it can feed the model a reason next to the result, replace the tool output, or add context.                                                                                                                                                          | https://code.claude.com/docs/en/hooks#posttooluse-decision-control             |
+| R-claude-code-platform-21 | vendor-guidance |      | Hook handlers can filter on tool arguments, not just tool name, using permission-rule syntax in the per-handler `if` field.                                                                                                                                                                    | https://code.claude.com/docs/en/hooks#matcher-patterns                         |
+| R-claude-code-platform-22 | vendor-guidance |      | Stop and SubagentStop can block the turn from ending, with documented loop protection: stop_hook_active plus an 8-consecutive-block cap, and additionalContext for non-error feedback.                                                                                                         | https://code.claude.com/docs/en/hooks#stop-input                               |
+| R-claude-code-platform-23 | vendor-guidance |      | A SubagentStop hook's block reason is delivered to the subagent as its next instruction; to inject into the parent instead, hook PostToolUse on the Agent tool.                                                                                                                                | https://code.claude.com/docs/en/hooks#subagentstop                             |
+| R-claude-code-platform-24 | vendor-guidance |      | SubagentStart hooks can inject context into a spawned subagent before its first prompt, matched by agent type (plugin agents match on the scoped name, which needs a regex anchor).                                                                                                            | https://code.claude.com/docs/en/hooks#subagentstart                            |
+| R-claude-code-platform-25 | vendor-guidance |      | A PreToolUse hook on the Agent tool sees the spawn's subagent_type and model, and updatedInput replaces the entire tool input before execution — so subagent dispatch itself is interceptable.                                                                                                 | https://code.claude.com/docs/en/hooks#pretooluse-decision-control              |
+| R-claude-code-platform-26 | vendor-guidance |      | prompt and agent hook types let a gate be evaluated by a model (Haiku by default) or an agentic verifier with tool access, on Stop, SubagentStop, PreToolUse, PostToolUse and others.                                                                                                          | https://code.claude.com/docs/en/hooks#agent-based-hooks                        |
+| R-claude-code-platform-27 | vendor-guidance |      | claude plugin eval runs each case in an isolated headless session with only the plugin loaded, three times by default, against a no-plugin baseline arm, and grades with regex, tool_used, tool_order, file_exists, llm and baseline graders.                                                  | https://code.claude.com/docs/en/plugin-evals#how-a-case-is-scored              |
+| R-claude-code-platform-28 | vendor-guidance |      | Eval runs are isolated from your real environment — no personal settings, CLAUDE.md, MCP servers, other plugins, or project .claude/; only an env allowlist plus EVAL_* variables reach the run, and the case definitions are hidden from the agent.                                           | https://code.claude.com/docs/en/plugin-evals#how-runs-are-isolated             |
+| R-claude-code-platform-29 | vendor-guidance |      | Eval results are a versioned JSON document plus a self-contained HTML report, with documented CI exit codes: 0 pass, 1 below threshold/load error, 2 partial, 130 interrupted, 143 terminated.                                                                                                 | https://code.claude.com/docs/en/plugin-evals#json-result                       |
+| R-claude-code-platform-30 | vendor-guidance |      | In a two-arm run, "the skill fired" graders are deliberately excluded from scoring, and there are no custom-code graders at all.                                                                                                                                                               | https://code.claude.com/docs/en/plugin-evals#grade-the-result                  |
+| R-claude-code-platform-31 | vendor-guidance |      | /skill-doctor reports per-skill context cost and invocation counts and flags never-invoked skills; in -p it prints as text, interactively it opens the /plugin Stats tab.                                                                                                                      | https://code.claude.com/docs/en/skills#find-unused-skills                      |
+| R-claude-code-platform-32 | vendor-guidance |      | Headless mode supports text, json, and stream-json output; --output-format json carries total_cost_usd and a per-model cost breakdown, and --json-schema returns schema-conforming structured_output.                                                                                          | https://code.claude.com/docs/en/headless#pipe-data-through-claude              |
+| R-claude-code-platform-33 | vendor-guidance |      | In stream-json, subagent messages are identified by parent_tool_use_id, and --forward-subagent-text adds their text and thinking blocks, at every nesting depth.                                                                                                                               | https://code.claude.com/docs/en/headless#follow-subagent-messages              |
+| R-claude-code-platform-34 | vendor-guidance |      | OpenTelemetry cost and token counters carry per-request attribution by agent.name, skill.name, plugin.name and query_source — but third-party plugin and skill names are redacted unless OTEL_LOG_TOOL_DETAILS=1.                                                                              | https://code.claude.com/docs/en/monitoring-usage#cost-counter                  |
+| R-claude-code-platform-35 | vendor-guidance |      | A subagent_completed event reports agent_type, duration, tool-use count, resolved model and model swaps — the cleanest per-role signal, subject to the same name redaction.                                                                                                                    | https://code.claude.com/docs/en/monitoring-usage#subagent-completed-event      |
+| R-claude-code-platform-36 | vendor-guidance |      | Custom plugin-emitted OTel metrics exist (hook_plugin_metrics) but are restricted to plugins installed from an official Anthropic marketplace.                                                                                                                                                 | https://code.claude.com/docs/en/monitoring-usage#hook-plugin-metrics-event     |
+| R-claude-code-platform-37 | vendor-guidance |      | Transcripts have documented on-disk locations, including a per-session subagents/ directory holding one JSONL per subagent run, swept after cleanupPeriodDays (default 30).                                                                                                                    | https://code.claude.com/docs/en/claude-directory#cleaned-up-automatically      |
+| R-claude-code-platform-38 | vendor-guidance |      | A PostToolUse hook on the Agent tool receives the subagent's run telemetry directly in tool_response: agentId, resolvedModel, modelsUsed, totalTokens, totalDurationMs, totalToolUseCount and a usage breakdown.                                                                               | https://code.claude.com/docs/en/hooks#pretooluse-input                         |
+| R-claude-code-platform-39 | vendor-guidance |      | A plugin can ship saved workflows: scripts in a workflows/ directory at the plugin root (or a workflows manifest field), namespaced by plugin name.                                                                                                                                            | https://code.claude.com/docs/en/workflows#distribute-a-workflow-in-a-plugin    |
+| R-claude-code-platform-40 | vendor-guidance |      | Workflow scripts are plain JavaScript with agent(), pipeline(), parallel(), phase() and log(), structured output schemas on agent calls, and enforced determinism (Date.now, Math.random and no-arg new Date all throw).                                                                       | https://code.claude.com/docs/en/workflows#edit-a-saved-script                  |
+| R-claude-code-platform-41 | vendor-guidance |      | Workflows cannot pause for user input mid-run; the documented pattern for sign-off between stages is one workflow per stage.                                                                                                                                                                   | https://code.claude.com/docs/en/workflows#behavior-and-limits                  |
+| R-claude-code-platform-42 | vendor-guidance |      | In -p and the Agent SDK a workflow launch is never prompted and goes through ordinary permission evaluation, approvable with a Workflow or Workflow(<name>) allow rule.                                                                                                                        | https://code.claude.com/docs/en/workflows#approve-the-plan-before-it-runs      |
+| R-claude-code-platform-43 | vendor-guidance |      | Fork mode (Claude spawning conversation-inheriting subagents) is on by default interactively and off in -p and the Agent SDK; where it's on, subagents always run in the background and Claude can't request the foreground.                                                                   | https://code.claude.com/docs/en/sub-agents#turn-fork-mode-on-or-off            |
+| R-claude-code-platform-44 | vendor-guidance |      | SendMessage resumes a finished subagent in place, with full history and the original tool set, without a new Agent call; and no message from any agent counts as user approval.                                                                                                                | https://code.claude.com/docs/en/sub-agents#resume-subagents                    |
+| R-claude-code-platform-45 | vendor-guidance |      | isolation: worktree gives a subagent its own checkout, branched from the default branch rather than the parent's HEAD unless worktree.baseRef is "head", with enforcement blocking writes and git redirects back into the main checkout.                                                       | https://code.claude.com/docs/en/worktrees#isolate-subagents-with-worktrees     |
+| R-claude-code-platform-46 | vendor-guidance |      | Plugin version is the update cache key: with an explicit version in plugin.json, users get nothing until you bump it, while a local-directory marketplace loads in place at every session start regardless of version.                                                                         | https://code.claude.com/docs/en/plugins-reference#version-management           |
+| R-claude-code-platform-47 | vendor-guidance |      | Release channels are supported as two marketplaces pointing at different refs of the same repo, assigned per user group through managed settings or a gateway policy — each channel must resolve to a different version.                                                                       | https://code.claude.com/docs/en/plugin-marketplaces#set-up-release-channels    |
+| R-claude-code-platform-48 | vendor-guidance |      | --plugin-dir loads a plugin for one session and takes precedence over an installed plugin of the same name; it also accepts a zip or a folder of plugins.                                                                                                                                      | https://code.claude.com/docs/en/plugins#test-your-plugins-locally              |
+| R-claude-code-platform-49 | vendor-guidance |      | userConfig declares typed, prompted plugin configuration stored in settings, substitutable as ${user_config.KEY} in skill and agent content and exported to hooks as CLAUDE_PLUGIN_OPTION_<KEY>.                                                                                               | https://code.claude.com/docs/en/plugins-reference#user-configuration           |
+
+## R-claude-code-platform-01
+
+> Plugin agents support `name`, `description`, `model`, `effort`, `maxTurns`, `tools`, `disallowedTools`, `skills`, `memory`, `background`, [`omitClaudeMd`](/docs/en/sub-agents#supported-frontmatter-fields), and `isolation` frontmatter fields. The only valid `isolation` value is `"worktree"`.
+
+Implication: Move every per-role rule that is really a capability constraint (model, effort, turn cap, tool allowlist) out of mise's prose into mise/agents/*.md. One file per role: critic, reviewer, implementer, documenter.
+
+## R-claude-code-platform-02
+
+> For security reasons, plugin-shipped agents don't support `hooks`, `mcpServers`, or `permissionMode`.
+
+Implication: A lean mise cannot attach a "run lint when this implementer stops" hook to the implementer agent file. Put it in hooks/hooks.json matched on the agent type (SubagentStop matcher `^mise:implementer$`).
+
+## R-claude-code-platform-03
+
+> `effort` | No | Effort level when this subagent is active. Overrides the session effort level. Default: inherits from session. Options: `low`, `medium`, `high`, `xhigh`, `max`; available levels depend on the model
+
+Implication: Your recorded preference ("delegate generation subagents to opus, gates stay on session model") becomes two lines of frontmatter: `model: opus` + `effort: high` on generators, `model: inherit` on gates.
+
+## R-claude-code-platform-04
+
+> 1. The per-invocation `model` parameter 2. The subagent definition's `model` frontmatter, where `inherit` selects the main conversation's model 3. The [`CLAUDE_CODE_SUBAGENT_MODEL`](/docs/en/model-config#environment-variables) environment variable, when you set it to a model alias or model ID 4. The main conversation's model
+
+Implication: Per-agent `model:` is the right lever, but a user with CLAUDE_CODE_SUBAGENT_MODEL_FORCE=1 silently overrides all of it. Document that as the one env var that breaks mise's model plan; check it in a SessionStart hook if it matters.
+
+## R-claude-code-platform-05
+
+> Plugin `agents/` directories are also scanned recursively. Unlike project and user scopes, a subfolder inside a plugin's `agents/` directory becomes part of the [scoped identifier](#invoke-subagents-explicitly): a file at `agents/review/security.md` in plugin `my-plugin` registers as `my-plugin:review:security`.
+
+Implication: The driver skill names roles as `mise:critic`, `mise:reviewer`. That string is stable and also what hook matchers and telemetry see, so it becomes the single identifier across skill prose, hooks, and the metrics ledger.
+
+## R-claude-code-platform-06
+
+> - Frontmatter that doesn't parse: Claude Code names the agent after the file, uses `Agent from my-plugin plugin` as its description, and ignores every field in the file
+
+Implication: A YAML typo in mise/agents/critic.md doesn't fail loudly — it silently drops `model: opus` and your critic runs on the session model. Add `claude plugin validate .` to the repo's quality gate.
+
+## R-claude-code-platform-07
+
+> The full content of each listed skill is injected into the subagent's context at startup. This field controls which skills are preloaded, not which skills the subagent can access: without it, the subagent can still discover and invoke project, user, and plugin skills through the Skill tool during execution.
+
+Implication: mise's per-role instruction files can stay files: put the shared checklist in a skill and list it in `skills:` on implementer and reviewer, instead of the driver restating it in every delegation prompt.
+
+## R-claude-code-platform-08
+
+> `omitClaudeMd` | No | Set to `true` to launch this subagent without the user, project, and local CLAUDE.md files; [managed policy files](/docs/en/memory#how-claude-md-files-load) still load, except for [managed subagents](#choose-the-subagent-scope). Use it for subagents that take everything they need from the [delegation prompt](#what-loads-at-startup). Ignored when the agent runs as the main session agent via `--agent` or the `agent` setting. Requires Claude Code v2.1.271 or later
+
+Implication: For a fresh-context critic whose whole point is judging without the project's framing, `omitClaudeMd: true` makes "fresh context" a platform guarantee instead of a prose instruction. Note the v2.1.271 floor.
+
+## R-claude-code-platform-09
+
+> Claude Code removes every other built-in tool from a background subagent, whether inherited or listed in the `tools` field, so the same definition can resolve to different tools in the foreground and the background.
+
+Implication: If a mise role needs a tool outside Read/Grep/Glob/Bash/Edit/Write/WebFetch/WebSearch/TodoWrite/Skill/Task*, it must not run in the background. Test roles in the mode they'll actually run in, not just interactively.
+
+## R-claude-code-platform-10
+
+> Plugins can include a `settings.json` file at the plugin root to apply default configuration when the plugin is enabled. Currently, only the `agent` and `subagentStatusLine` keys are supported.
+
+Implication: "Use Opus for subagents" cannot ship as a plugin-level env setting. It has to be per-agent `model:` frontmatter. Anything else (env, permissions) stays a README instruction for the user's own settings.json.
+
+## R-claude-code-platform-11
+
+> | `disallowed-tools` | No | Tools removed from Claude's available pool while this skill is active. Use for autonomous skills that should never call certain tools, such as `AskUserQuestion` for a background loop.
+
+Implication: A stage skill that must never ask the user (autonomous execution stage) declares `disallowed-tools: AskUserQuestion` rather than saying "do not ask the user" in prose.
+
+## R-claude-code-platform-12
+
+> Put the key use case first: the combined `description` and `when_to_use` text is truncated at 1,536 characters in the skill listing to reduce context usage.
+
+Implication: mise's `/mise:next` description is long; anything past 1,536 chars of description+when_to_use is dropped from the listing entirely. Trim it and move the detail into the body or a reference file.
+
+## R-claude-code-platform-13
+
+> <Tip>Keep `SKILL.md` under 500 lines. Move detailed reference material to separate files.</Tip>
+
+Implication: Split the driver: SKILL.md holds the stage router and the decision rules; per-stage detail (requirements format, plan format, bugfix route) moves to reference files the driver reads only when that stage runs.
+
+## R-claude-code-platform-14
+
+> When the conversation is summarized to free context, Claude Code re-attaches the most recent invocation of each skill after the summary, keeping the first 5,000 tokens of each. Re-attached skills share a combined budget of 25,000 tokens.
+
+Implication: A long-running mise run that compacts mid-stage loses the tail of a big driver skill. Keep the load-bearing stage rules in the first 5,000 tokens, or re-invoke the stage skill after compaction — or enforce them in a hook instead.
+
+## R-claude-code-platform-15
+
+> Add `context: fork` to your frontmatter when you want a skill to run in isolation. Claude Code starts a new subagent of the type set in the `agent` field and gives it the skill content as its prompt. The subagent doesn't see your conversation history, so the skill's instructions have to stand on their own.
+
+Implication: Each mise stage that is really "one isolated job with a fixed prompt" (critic pass, reviewer pass, documenter pass) can be a forked skill instead of driver prose plus a Task call. The driver shrinks to routing.
+
+## R-claude-code-platform-16
+
+> The grant clears when you send your next message, even though the skill content [stays in context](#skill-content-lifecycle); invoking the skill again re-applies it for that turn.
+
+Implication: Don't rely on allowed-tools to keep a multi-turn mise stage prompt-free. For a stage that spans turns, either re-invoke the skill each turn or tell users to add session allow rules.
+
+## R-claude-code-platform-17
+
+> The `` !`<command>` `` syntax runs shell commands before the skill content is sent to Claude. The command output replaces the placeholder, so Claude receives actual data, not the command itself.
+
+Implication: The driver can read mise state deterministically: `!`cat .mise/state.json`` at invocation, instead of instructing the model to go read the state file. Note a non-zero exit aborts the whole invocation — append `|| true`.
+
+## R-claude-code-platform-18
+
+> **Location**: `hooks/hooks.json` in plugin root, or inline in plugin.json
+
+Implication: This is mise's biggest prose-to-platform win: stage gates that today are "the reviewer MUST verify X" become PostToolUse/SubagentStop hooks running a bundled script.
+
+## R-claude-code-platform-19
+
+> For most hook events, exit code 2 is the only exit code that blocks through the code alone. Without valid JSON on stdout, Claude Code treats exit code 1 as a non-blocking error and proceeds with the action, even though 1 is the conventional Unix failure code. If your hook is meant to enforce a policy, use `exit 2`.
+
+Implication: A naive `eslint .` wrapper that exits 1 on lint errors will NOT gate anything. mise's lint gate script must translate failure into exit 2 (or JSON), and the README should say so.
+
+## R-claude-code-platform-20
+
+> | `decision` | `"block"` adds the `reason` next to the tool result. Claude still sees the original output; to replace it, use `updatedToolOutput`
+
+Implication: "Run lint on changed files" fits PostToolUse matcher `Edit|Write`: the edit lands, then the hook hands the model the lint failure as feedback. Use PreToolUse only if mise must actually prevent an edit.
+
+## R-claude-code-platform-21
+
+> For tool events, you can filter more narrowly by setting the [`if` field](#common-fields) on individual hook handlers. `if` uses [permission rule syntax](/docs/en/permissions) to match against the tool name and arguments together, so `"Bash(git *)"` runs when any subcommand of the Bash input matches `git *` and `"Edit(*.ts)"` runs only for TypeScript files.
+
+Implication: The lint gate can be scoped to source files with `if: "Edit(*.ts)"` so it never fires on markdown or .mise/ state writes — no filtering logic inside the script.
+
+## R-claude-code-platform-22
+
+> The `stop_hook_active` field is `true` when Claude Code is already continuing as a result of a stop hook. Check this value or process the transcript to avoid blocking on a condition that will never resolve. Claude Code overrides the hook and ends the turn after 8 consecutive blocks.
+
+Implication: mise's end-of-plan gate can be a Stop hook that refuses to let the turn end until the checklist file is answered — with a hard 8-block ceiling, so a stuck gate degrades instead of hanging.
+
+## R-claude-code-platform-23
+
+> Returning `decision: "block"` with a `reason` keeps the subagent running and delivers `reason` to the subagent as its next instruction. A hook that blocks by exiting 2 delivers its stderr message the same way. To inject context into the parent session after a subagent returns, use a [`PostToolUse`](#posttooluse) hook on the `Agent` tool instead.
+
+Implication: The verifying-reviewer loop becomes mechanical: SubagentStop matched on `^mise:implementer$` checks the checklist answers and, if incomplete, sends the implementer back — no driver turn consumed.
+
+## R-claude-code-platform-24
+
+> For subagents shipped by a [plugin](/docs/en/plugins), the agent type is the plugin-scoped identifier such as `my-plugin:reviewer`, not the bare frontmatter name. The colon places a plugin-scoped name on the regular-expression path, so anchor the matcher with `^` and `$` for an exact match: `^my-plugin:reviewer$`.
+
+Implication: Per-role context (current stage, checklist path, changed-file list) can be injected by a hook at spawn time rather than restated in every delegation prompt. Remember the `^mise:critic$` anchoring.
+
+## R-claude-code-platform-25
+
+> | `updatedInput` | Modifies the tool's input parameters before execution. Replaces the entire input object, so include unchanged fields alongside modified ones.
+
+Implication: If mise must guarantee "critics always run on Opus" even when the driver forgets, a PreToolUse hook on Agent can rewrite `model` for `subagent_type: mise:critic`. Last-resort enforcement, not the first choice.
+
+## R-claude-code-platform-26
+
+> Agent-based hooks (`type: "agent"`) are like prompt-based hooks but with multi-turn tool access. Instead of a single LLM call, an agent hook spawns a subagent that can read files, search code, and inspect the codebase to verify conditions. Agent hooks support the same events as prompt-based hooks.
+
+Implication: Gates that can't be scripted ("did the implementer actually answer the checklist?") can still leave the driver's prose: a prompt hook on SubagentStop returning {ok:false, reason} is cheaper and more reliable than a driver instruction. Note agent hooks are flagged experimental.
+
+## R-claude-code-platform-27
+
+> One run of a non-deterministic agent tells you little, so each case runs three times by default. A run's score is the fraction of its graders that passed, weighted if you set weights, and the case's score is the mean across its runs. A case passes when its score meets the [`--threshold`](#command-options), `1.0` by default.
+
+Implication: This is the regression harness for a v3 rewrite: one case per stage transition, graded with `tool_used` on the right mise agent plus a regex on the state file the stage should have written.
+
+## R-claude-code-platform-28
+
+> **Nothing personal or project-level loads.** Your user settings, hooks, `CLAUDE.md` files, MCP servers, other installed plugins, memory, and skills are absent, and no project-scoped `.claude/` or `.mcp.json` above the sandbox is read.
+
+Implication: Any mise behavior that today depends on the user's `.claude/mise-config.md` or `.claude/mise-checklist.md` will score zero in evals unless the case creates it in a scaffold_script (needs --scaffold) or the plugin ships a default.
+
+## R-claude-code-platform-29
+
+> `aggregate-result.json`, and `--json` output, is a versioned document with `schemaVersion: 1` for CI scripts to parse. Field names are camelCase and new fields are added without renaming existing ones, so write your script to ignore fields it doesn't recognize.
+
+Implication: A GitHub Action on the v3 branch can gate merges on `claude plugin eval . --trust-plugin --json results.json --threshold 0.8 --model claude-sonnet-5`, archiving aggregate-result.json as the per-release quality record.
+
+## R-claude-code-platform-30
+
+> There are no custom-code graders.
+
+Implication: Checks mise would naturally write as a script ("the state file advanced exactly one stage") have to be expressed as a regex over a produced file's contents, or as a prompt asking Claude to write the outcome to a file that a regex grader then reads.
+
+## R-claude-code-platform-31
+
+> Every skill in the [skill listing](#skill-descriptions-are-cut-short) adds to your context on every turn, whether or not Claude ever uses it. Run `/skill-doctor` to see what each of your skills costs and how often it gets used, so you can decide which ones to turn off.
+
+Implication: Use it as the measurement for "lean": run /skill-doctor before and after the v3 split to show the driver's always-on context cost actually dropped. Complement with `claude plugin details mise` for the plugin's projected token cost.
+
+## R-claude-code-platform-32
+
+> With `--output-format json`, the response payload includes `total_cost_usd` and a per-model cost breakdown, so scripted callers can track spend per invocation without consulting the [usage dashboard](/docs/en/costs). Both figures are [client-side estimates](/docs/en/agent-sdk/cost-tracking) and can differ from your actual bill.
+
+Implication: A per-run metrics ledger can be built without OTel: run mise stages via `claude -p --output-format json` in the harness and append total_cost_usd + per-model breakdown per stage.
+
+## R-claude-code-platform-33
+
+> Messages from [subagents](/docs/en/sub-agents) appear in the stream as `assistant` and `user` messages whose `parent_tool_use_id` field is the ID of the tool call that spawned the subagent. Messages from the main conversation carry `null` in that field.
+
+Implication: A mise ledger can attribute tokens and turns to each role by following parent_tool_use_id, reconstructing the critic/reviewer/implementer tree from one stream instead of parsing transcripts.
+
+## R-claude-code-platform-34
+
+> - `skill.name`: Skill active for the request, set by the Skill tool, a `/` command, or inherited by a spawned subagent. Built-in, bundled, user-defined, and official-marketplace plugin skill names appear verbatim. Third-party plugin skill names are replaced with `"third-party"`. Absent when no skill is active.
+
+Implication: mise is a third-party plugin, so out of the box its skills and agents show up as "third-party"/"custom" in OTel. A mise metrics ledger over OTel requires OTEL_LOG_TOOL_DETAILS=1 in the user's env — document it or don't depend on OTel.
+
+## R-claude-code-platform-35
+
+> - `agent_type`: The subagent type. Built-in agent names and agents from official-marketplace plugins appear verbatim; other agent names are replaced with `"custom"` unless `OTEL_LOG_TOOL_DETAILS=1` is set
+
+Implication: Roll up "how long does a critic pass take, how many tools does it use, did it actually run on Opus" per stage — this is the metric that tells you whether the config-over-prose rewrite worked.
+
+## R-claude-code-platform-36
+
+> Logged when an official-marketplace plugin hook emits per-invocation metrics. Only plugins installed from an official Anthropic marketplace can emit these. Third-party marketplace plugins and user-configured hooks don't emit to this event.
+
+Implication: mise cannot emit its own stage metrics into the user's OTel pipeline. Its ledger must be files the plugin writes itself (e.g. under ${CLAUDE_PLUGIN_DATA} or .mise/), written by hooks.
+
+## R-claude-code-platform-37
+
+> | `projects/<project>/<session>/subagents/` | [Subagent](/docs/en/sub-agents) conversation transcripts, removed with the parent session transcript when it ages out
+
+Implication: A post-hoc ledger can read `~/.claude/projects/<project>/<session>/subagents/agent-<id>.jsonl` per role. But retention is 30 days by default — copy what mise needs into the repo's .mise/ at stage end rather than mining transcripts later.
+
+## R-claude-code-platform-38
+
+> When a foreground Agent call completes, your [PostToolUse hook](#posttooluse) receives the subagent's result and run telemetry in `tool_response`.
+
+Implication: This is the lowest-friction per-run ledger: one PostToolUse hook on `Agent` appends a JSON line per role invocation to .mise/ledger.jsonl. No OTel, no transcript mining. Caveat: background subagents return async_launched with no usage fields.
+
+## R-claude-code-platform-39
+
+> Plugin workflows are namespaced by the plugin name. A plugin called `acme-tools` containing a script whose `meta.name` is `release-audit` runs as `/acme-tools:release-audit`.
+
+Implication: mise could ship `/mise:execute-plan` as a workflow script where the fan-out over tasks is code, not driver prose — the single biggest "move the plan into code" option available.
+
+## R-claude-code-platform-40
+
+> **Timestamps and randomness**: Claude Code makes `Date.now()`, `Math.random()`, and a no-argument `new Date()` throw inside the script, so that a [relaunched run](#resume-after-a-pause) repeats the same `agent()` calls. Pass a timestamp in through `args` instead.
+
+Implication: A mise workflow can't stamp its own state files with timestamps — pass them via `args`. Resume semantics (completed agents return cached results) map well onto mise's resumable state, but only within the same session.
+
+## R-claude-code-platform-41
+
+> | No mid-run user input | A run pauses on its own only for agent permission prompts and a [usage-limit wait](#when-a-run-hits-your-usage-limit). For sign-off between stages, run each stage as its own workflow |
+
+Implication: mise's user-gated goals/mock approval cannot live inside a workflow. Only the autonomous execution stage is a workflow candidate; gated stages stay skills.
+
+## R-claude-code-platform-42
+
+> - **Permission rule**: `Workflow` in your allow rules approves every workflow, and `Workflow(<name>)` approves one saved workflow by name.
+
+Implication: If mise ships a workflow, the README needs one line: add `Workflow(mise:execute-plan)` to allow rules for unattended runs. Also note the Workflow tool is withheld from subagents, so only the main session can launch one.
+
+## R-claude-code-platform-43
+
+> Claude Code turns fork mode on by default in interactive sessions and leaves it off by default in [non-interactive mode](/docs/en/headless) with `-p` and in the Agent SDK.
+
+Implication: mise behaves differently interactively vs in -p: background-only spawning interactively (narrower tools, results arrive a turn later) vs foreground-capable in -p. Any prose assuming "the critic returns before I continue" is wrong interactively.
+
+## R-claude-code-platform-44
+
+> When Claude sends a completed subagent a message with the `SendMessage` tool, the subagent resumes in the background without a new `Agent` invocation.
+
+Implication: The critic→implementer→critic loop can be continuation rather than re-spawn: the implementer keeps its context and prompt cache, which is cheaper and removes the "re-explain the task" prose. Resumes bypass the concurrency limit, so bound the loop yourself.
+
+## R-claude-code-platform-45
+
+> Each subagent gets a temporary worktree that Claude Code removes automatically when the subagent finishes without changes; a worktree with changes stays on disk until the [periodic sweep below](#clean-up-subagent-and-background-session-worktrees) can remove it without losing work.
+
+Implication: For parallel implementers, `isolation: worktree` in the agent file replaces all the prose about not touching each other's files. But the default "fresh" base branches from main — mise works on a feature branch, so it must document `worktree.baseRef: "head"` or the agent starts from the wrong tree.
+
+## R-claude-code-platform-46
+
+> Claude Code uses the plugin's version as the cache key that determines whether an update is available. When you run `/plugin update` or auto-update fires, Claude Code computes the current version and skips the update if it matches what's already installed. A plugin [loaded in place](#plugin-caching-and-file-resolution) from a local-directory marketplace loads its current source files at every session start, whatever its version string says.
+
+Implication: Confirms the CLAUDE.md rule ("bump version in the same run") is load-bearing for installed users, and explains why local dev never notices: your own local-directory marketplace bypasses the version check entirely.
+
+## R-claude-code-platform-47
+
+> To support "stable" and "latest" release channels for your plugins, you can set up two marketplaces that point to different refs or SHAs of the same repo.
+
+Implication: A v3 experimental channel is: a second marketplace.json pinned to the `v3` ref, with `version` differing from stable. Per-group assignment needs managed settings, which a solo/OSS plugin won't have — users would just add the second marketplace themselves.
+
+## R-claude-code-platform-48
+
+> When a `--plugin-dir` plugin has the same name as an installed marketplace plugin, the local copy takes precedence for that session. This lets you test changes to a plugin you already have installed without uninstalling it first.
+
+Implication: This is the documented way to try v3 against your installed v2: `claude --plugin-dir ~/Code/mise-claude-plugin` in one terminal. It is override, not side-by-side — see gaps.
+
+## R-claude-code-platform-49
+
+> Each value is available for substitution as `${user_config.KEY}` in MCP and LSP server configs and hook commands. Non-sensitive values can also be substituted in skill and agent content. All values are exported to hook processes as `CLAUDE_PLUGIN_OPTION_<KEY>` environment variables, where `<KEY>` is the option key uppercased.
+
+Implication: mise's `.claude/mise-config.md` prose-config could become real typed config: string options with `options:` pickers, prompted at enable time, readable by both skills and gate scripts — with no parsing and no drift between README and behavior.
+
+## Gaps
+
+- Skill `agent:` field and plugin-scoped agents: https://code.claude.com/docs/en/skills#run-skills-in-a-subagent says the field takes "built-in agents (Explore, Plan, general-purpose) or any custom subagent from .claude/agents/". It does NOT document whether a plugin-scoped type like `mise:critic` is accepted there. This matters for making forked stage skills target mise's own roles — test it before designing around it.
+- Plugin version gate for `claude plugin eval`: the public docs state "Claude Code v2.1.269 or later" (https://code.claude.com/docs/en/plugin-evals#requirements), while this session's embedded internal reference gives earlier version gates (command from 2.1.198, stable --json from 2.1.210, unified aggregate-result.json from 2.1.224). Treat the docs number as the safe floor and confirm with `claude plugin eval --help` on the target build.
+- Running two versions of the same plugin name side by side in one session is not documented as supported anywhere. Documented options are: per-user-group release channels via managed settings, `--plugin-dir` override (one wins per session), or publishing the experimental build under a different `name` (e.g. `mise-next`). Marketplace docs also note Claude Code refuses updates when installed plugins from different marketplaces share a name.
+- No per-hook disable exists. Only `disableAllHooks` (settings-wide) is documented — https://code.claude.com/docs/en/hooks#disable-or-remove-hooks says "There is no way to disable an individual hook while keeping it in the configuration." So a mise gate can't be turned off selectively by a user; design an env-var or userConfig escape hatch inside the gate script.
+- Third-party plugins cannot emit custom OpenTelemetry metrics (`hook_plugin_metrics` is official-marketplace only), and skill/agent/plugin names are redacted to "third-party"/"custom" in OTel unless the user sets OTEL_LOG_TOOL_DETAILS=1. A mise metrics ledger therefore has to be plugin-written files, not OTel.
+- The session transcript JSONL schema is not publicly documented as a stable format — only the file locations and a couple of record shapes (compact_boundary). Building a ledger by parsing transcripts is unsupported surface; prefer the PostToolUse-on-Agent `tool_response` telemetry.
+- `--output-format json`'s full result schema is not enumerated on the headless page; only `result`, `session_id`, `structured_output`, `total_cost_usd` and "a per-model cost breakdown" are named. Field-level ledger design should be verified against an actual run.
+- There is no platform primitive for stage/state-machine sequencing. Nothing in the docs models "stage N must precede stage N+1"; the closest deterministic enforcement is hooks (PreToolUse/Stop/SubagentStop) reading a state file the plugin itself maintains. Stage ordering will stay plugin-authored logic, not configuration.
+- plugin eval has no custom-code graders, so assertions mise would naturally write as scripts must be encoded as regex over a produced file's contents plus tool_used assertions on the command that produced it.
+- Workflows cannot pause for user input mid-run, so mise's user-gated stages (goals approval, mock approval) cannot be folded into a single workflow — only the autonomous execution stage is a workflow candidate.
+- Whether `context: fork` skills and plugin-shipped workflows can be gated by a plugin's own hooks in a way that survives `--bare` / `-p` runs is not documented; `--bare` explicitly skips auto-discovery of hooks, skills, agents and plugins, which would disable every mise gate in that mode.

@@ -1,0 +1,9 @@
+# Raw extracts too large for git; regenerate with tools/ from session logs (retention 90 days)
+runs/gate-outcomes.jsonl
+runs/driver-edits.jsonl
+runs/gate-findings.jsonl
+runs/friction.jsonl
+runs/mise-artifacts.jsonl
+runs/digests/
+webcache/
+review.html

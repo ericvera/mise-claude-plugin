@@ -1,0 +1,26 @@
+#repo	key	citation	since	regex (case-insensitive, matched against noteText; first match wins, top to bottom)
+okven	SNAP	okven/CLAUDE.md:138 (Always use inline snapshots; never toContain/toMatchObject/objectContaining)	2025-10-14	inline snapshot|__snapshots__|tomatchobject|objectcontaining|tothrow|type of expect
+okven	DRILL	okven/CLAUDE.md:139 (No drilling inside expect) + .claude/mise-checklist.md:12 since 2026-08-19 + CLAUDE.md:138 "not a hand-built object that cherry-picks fields" since 2026-04-24	2026-04-24	prop drill|drill|full object|full result|full data|complex objects|made up|building objects|return values directly|spot check|expect on a diff|extreneous|check full|full result
+okven	MOCKINT	okven/CLAUDE.md:130 (NEVER mock internal code)	2026-02-10	mock internal|never mock|mock.*util
+okven	MOCKDIR	okven/CLAUDE.md:134 + CLAUDE.md:149 (module mocks live in __mocks__)	2026-02-10	__mocks__|vi\.mocks?|mock global
+okven	FAKETIMER	okven/functions/CLAUDE.md:15 (use setFakeTimer for consistent dates)	2025-10-03	fake ?timer|setfaketimer
+okven	COLOC	okven/.claude/mise-config.md:44 + .claude/mise-checklist.md:8 (every new file gets a colocated test)	2026-08-05	co-located|colocated|missing.*test|no atom has tests|tests for vue|no tests for|do we have tests|no test coverage|need a test|untested|tests for the new branches|not need a test
+okven	SCEN	okven/CLAUDE.md:145 (Test scenarios, not individual outputs) + .claude/mise-checklist.md:18 since 2026-08-31	2026-03-04	beforeeach|own test|own scenario|independent test|verification on|verification in|validation in one|validation in on|multiple tests inside|combine the tests|per scenario|different verifications|earns its own|not its own|rather than its own|rather than a new scenario|twice in one test
+okven	SIBLING	okven/CLAUDE.md:146 (before writing a test, match the shape of the nearest sibling)	2026-08-19	break with the pattern|follow the pattern|existing pattern|patterns of similar
+okven	TITLE	okven/CLAUDE.md:144 (each it() title names what its assertions prove)	2026-03-04	test name|title says|name of the test|test titles|test grouping|the title|test does not seem to belong|is this test
+okven	ASSIGNFIRST	okven/CLAUDE.md:84 (never reach for a property on a method's return value)	2026-08-20	reach for a prop|return value of a method
+okven	OPTIONAL	okven/CLAUDE.md:87 (Optional means a caller omits it; an optional every caller fills is made required)	2026-08-31	not to be required|not be required|optional and not required|why is menu optional|string \| undefined
+okven	ENUMCONST	okven/CLAUDE.md:118 (enums in constants.ts, types.ts is pure types, a one-consumer constant lives in the consumer)	2026-07-21	enum|constants\.ts|types\.ts|used anywhere else|moved to this file
+okven	ONEEXPORT	okven/CLAUDE.md:115 (one export per file)	2025-10-03	one export|single export|only one export|export per file|match the file name|matches the file name|own file
+okven	INTERNAL	okven/CLAUDE.md:119 (helpers used only in a directory live in internal/)	2025-10-14	/internal|internal director|internal dir
+okven	ASSERTNEVER	okven/CLAUDE.md:108 (exhaustive switch + assertNever) + .claude/mise-checklist.md:16	2026-02-10	assertnever|assert never
+okven	DBREFS	okven/functions/CLAUDE.md:32 (all queries go through db-refs) + functions/CLAUDE.md:23 (never read Firestore in a test)	2025-10-04	db ref|db-ref|query helper|variable quer|separate queries|two separate
+okven	DOCSTYLE	okven/.claude/skills/doc-style/SKILL.md:32 (no colons, semicolons, em-dashes in comment or doc prose)	2026-09-07	em-dash|em dash|semicolon|ai slop|doc style|doc guidelines|doc-style
+okven	UIATOM	okven/.claude/skills/ui-conventions/SKILL.md:125-127 (atoms/molecules/organisms placement)	2026-07-14	atom|molecule|organism
+okven	UNO	okven/CLAUDE.md:165 + .claude/mise-config.md:31 (UnoCSS strict preset)	2026-07-13	unocss|scoped css
+okven	PAGECOMP	okven/hosting/CLAUDE.md:21 (page logic lives in its use<Name>Page composable)	2026-07-13	composable|usepublicmenupage|usevanitypage|uselabpage
+okven	SPANISH	okven/.claude/mise-config.md:31 + hosting/CLAUDE.md:47 (Spanish PR copy per spanish-voice.md)	2026-07-15	spanish|in english|english\b
+okven	HELPER	okven/functions/CLAUDE.md:78 (Helper first - find the existing helper, extract instead of mirroring)	2026-08-19	don't we have|dont we have|already somewhere|isn't there a|isnt there a|reuse|duplicat|consolidat|existing helper|repeated in|same switch|another inconsistency|get rid of it
+okven	VOCAB	okven/CLAUDE.md:101 (Reuse existing vocabulary) + .claude/mise-checklist.md:20 since 2026-09-12	2026-08-19	better name|rename|vocabular|misnomer|better term|better word|another name|ambiguous|less ambiguous|consistent vocabulary|vocabulary consistent|consistent name|naming convention
+okven	COMMENT	okven/.claude/mise-checklist.md:24 (every comment explains why, none misdescribes) + CLAUDE.md:90	2026-08-19	comment|jsdoc|documentation
+firebase-kit	FKMOCKDIR	firebase-kit/.claude/mise-config.md:22 (module shims live in src/__mocks__/<module>)	2026-08-07	__mocks__

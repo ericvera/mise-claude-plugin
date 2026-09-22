@@ -1,0 +1,128 @@
+#!/usr/bin/env python3
+"""Verify each candidate quote appears verbatim (whitespace-normalized) in the cached page text."""
+import re, sys
+sys.path.insert(0, "/Users/eric/Code/mise-claude-plugin/docs/v3-research/tools")
+from fetch_text import get
+
+def norm(s):
+    s = s.replace("’", "'").replace("‘", "'").replace("“", '"').replace("”", '"')
+    s = s.replace("—", "-").replace("–", "-").replace("×", "x")
+    return re.sub(r"\s+", " ", s).strip()
+
+Q = [
+ ("bea","https://www.anthropic.com/engineering/building-effective-agents","we recommend finding the simplest solution possible, and only increasing complexity when needed. This might mean not building agentic systems at all."),
+ ("bea2","https://www.anthropic.com/engineering/building-effective-agents","workflows offer predictability and consistency for well-defined tasks, whereas agents are the better option when flexibility and model-driven decision-making are needed at scale"),
+ ("bea3","https://www.anthropic.com/engineering/building-effective-agents","you should consider adding complexity only when it demonstrably improves outcomes"),
+ ("bea4","https://www.anthropic.com/engineering/building-effective-agents","Agentic systems often trade latency and cost for better task performance"),
+ ("bea5","https://www.anthropic.com/engineering/building-effective-agents","Note: Much of the tooling landscape described in this post has changed since December 2024."),
+ ("ma1","https://www.anthropic.com/engineering/multi-agent-research-system","outperformed single-agent Claude Opus 4 by 90.2% on our internal research eval"),
+ ("ma2","https://www.anthropic.com/engineering/multi-agent-research-system","agents typically use about 4× more tokens than chat interactions, and multi-agent systems use about 15× more tokens than chats"),
+ ("ma3","https://www.anthropic.com/engineering/multi-agent-research-system","most coding tasks involve fewer truly parallelizable tasks than research, and LLM agents are not yet great at coordinating and delegating to other agents in real time"),
+ ("ma4","https://www.anthropic.com/engineering/multi-agent-research-system","Each subagent needs an objective, an output format, guidance on the tools and sources to use, and clear task boundaries."),
+ ("ma5","https://www.anthropic.com/engineering/multi-agent-research-system","Simple fact-finding requires just 1 agent with 3-10 tool calls"),
+ ("ma6","https://www.anthropic.com/engineering/multi-agent-research-system","the best prompts for these agents are not just strict instructions, but frameworks for collaboration that define the division of labor, problem-solving approaches, and effort budgets"),
+ ("ma7","https://www.anthropic.com/engineering/multi-agent-research-system","We started with a set of about 20 queries representing real usage patterns."),
+ ("ma8","https://www.anthropic.com/engineering/multi-agent-research-system","a single LLM call with a single prompt outputting scores from 0.0-1.0 and a pass-fail grade was the most consistent and aligned with human judgements"),
+ ("ce1","https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents","as the number of tokens in the context window increases, the model’s ability to accurately recall information from that context decreases"),
+ ("ce2","https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents","good context engineering means finding the smallest possible set of high-signal tokens that maximize the likelihood of some desired outcome"),
+ ("ce3","https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents","we see engineers hardcoding complex, brittle logic in their prompts to elicit exact agentic behavior. This approach creates fragility and increases maintenance complexity over time."),
+ ("ce4","https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents","teams will often stuff a laundry list of edge cases into a prompt in an attempt to articulate every possible rule the LLM should follow for a particular task. We do not recommend this."),
+ ("ce5","https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents","Each subagent might explore extensively, using tens of thousands of tokens or more, but returns only a condensed, distilled summary of its work (often 1,000-2,000 tokens)"),
+ ("ce6","https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents","“do the simplest thing that works” will likely remain our best advice for teams building agents on top of Claude"),
+ ("ce7","https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents","once a tool has been called deep in the message history, why would the agent need to see the raw result again?"),
+ ("ce8","https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents","Like Claude Code creating a to-do list, or your custom agent maintaining a NOTES.md file"),
+ ("wt1","https://www.anthropic.com/engineering/writing-tools-for-agents","We recommend building a few thoughtful tools targeting specific high-impact workflows"),
+ ("wt2","https://www.anthropic.com/engineering/writing-tools-for-agents","For Claude Code, we restrict tool responses to 25,000 tokens by default."),
+ ("wt3","https://www.anthropic.com/engineering/writing-tools-for-agents","resulted in a 40% decrease in task completion time for future agents using the new description"),
+ ("cc1","https://www.anthropic.com/engineering/claude-code-best-practices","Most best practices are based on one constraint: Claude’s context window fills up fast, and performance degrades as it fills."),
+ ("cc2","https://www.anthropic.com/engineering/claude-code-best-practices","For each line, ask: “Would removing this cause Claude to make mistakes?” If not, cut it. Bloated CLAUDE.md files cause Claude to ignore your actual instructions!"),
+ ("cc3","https://www.anthropic.com/engineering/claude-code-best-practices","Unlike CLAUDE.md instructions which are advisory, hooks are deterministic and guarantee the action happens."),
+ ("cc4","https://www.anthropic.com/engineering/claude-code-best-practices","If Claude already does something correctly without the instruction, delete it or convert it to a hook."),
+ ("cc5","https://www.anthropic.com/engineering/claude-code-best-practices","A reviewer prompted to find gaps will usually report some, even when the work is sound, because that is what it was asked to do. Chasing every finding leads to over-engineering"),
+ ("cc6","https://www.anthropic.com/engineering/claude-code-best-practices","If you emphasize many lines, none of them stands out."),
+ ("cc7","https://www.anthropic.com/engineering/claude-code-best-practices","If you could describe the diff in one sentence, skip the plan."),
+ ("cc8","https://www.anthropic.com/engineering/claude-code-best-practices","As a deterministic gate : a Stop hook runs your check as a script and blocks the turn from ending until it passes."),
+ ("cc9","https://www.anthropic.com/engineering/claude-code-best-practices","A fresh context improves code review since Claude won’t be biased toward code it just wrote."),
+ ("cc10","https://www.anthropic.com/engineering/claude-code-best-practices","Have Claude show evidence rather than asserting success"),
+ ("sk1","https://docs.claude.com/en/docs/agents-and-tools/agent-skills/best-practices","The context window is a public good."),
+ ("sk2","https://docs.claude.com/en/docs/agents-and-tools/agent-skills/best-practices","“Does this paragraph justify its token cost?”"),
+ ("sk3","https://docs.claude.com/en/docs/agents-and-tools/agent-skills/best-practices","Match the level of specificity to the task’s fragility and variability."),
+ ("sk4","https://docs.claude.com/en/docs/agents-and-tools/agent-skills/best-practices","Keep SKILL.md body under 500 lines for optimal performance"),
+ ("sk5","https://docs.claude.com/en/docs/agents-and-tools/agent-skills/best-practices","Keep references one level deep from SKILL.md"),
+ ("sk6","https://docs.claude.com/en/docs/agents-and-tools/agent-skills/best-practices","Create evaluations BEFORE writing extensive documentation."),
+ ("sk7","https://docs.claude.com/en/docs/agents-and-tools/agent-skills/best-practices","Don’t present multiple approaches unless necessary"),
+ ("sk8","https://docs.claude.com/en/docs/agents-and-tools/agent-skills/best-practices","Choose one term and use it throughout the Skill"),
+ ("sk9","https://docs.claude.com/en/docs/agents-and-tools/agent-skills/best-practices","using stronger language such as “MUST filter” instead of “always filter”"),
+ ("sk10","https://docs.claude.com/en/docs/agents-and-tools/agent-skills/best-practices","For particularly complex workflows, provide a checklist that Claude can copy into its response and check off as it progresses."),
+ ("as1","https://www.anthropic.com/engineering/equipping-agents-for-the-real-world-with-agent-skills","sorting a list via token generation is far more expensive than simply running a sorting algorithm"),
+ ("hl1","https://www.anthropic.com/engineering/effective-harnesses-for-long-running-agents","the agent tended to try to do too much at once—essentially to attempt to one-shot the app"),
+ ("hl2","https://www.anthropic.com/engineering/effective-harnesses-for-long-running-agents","we found that the best way to elicit this behavior was to ask the model to commit its progress to git with descriptive commit messages and to write summaries of its progress in a progress file"),
+ ("hl3","https://www.anthropic.com/engineering/effective-harnesses-for-long-running-agents","we landed on using JSON for this, as the model is less likely to inappropriately change or overwrite JSON files compared to Markdown files"),
+ ("hl4","https://www.anthropic.com/engineering/effective-harnesses-for-long-running-agents","It is unacceptable to remove or edit tests because this could lead to missing or buggy functionality."),
+ ("hl5","https://www.anthropic.com/engineering/effective-harnesses-for-long-running-agents","a later agent instance would look around, see that progress had been made, and declare the job done"),
+ ("hd1","https://www.anthropic.com/engineering/harness-design-long-running-apps","every component in a harness encodes an assumption about what the model can’t do on its own, and those assumptions are worth stress testing"),
+ ("hd2","https://www.anthropic.com/engineering/harness-design-long-running-apps","removing one component at a time and reviewing what impact it had on the final result"),
+ ("hd3","https://www.anthropic.com/engineering/harness-design-long-running-apps","When asked to evaluate work they've produced, agents tend to respond by confidently praising the work—even when, to a human observer, the quality is obviously mediocre."),
+ ("hd4","https://www.anthropic.com/engineering/harness-design-long-running-apps","tuning a standalone evaluator to be skeptical turns out to be far more tractable than making a generator critical of its own work"),
+ ("hd5","https://www.anthropic.com/engineering/harness-design-long-running-apps","the evaluator is not a fixed yes-or-no decision. It is worth the cost when the task sits beyond what the current model does reliably solo."),
+ ("hd6","https://www.anthropic.com/engineering/harness-design-long-running-apps","The harness was over 20x more expensive, but the difference in output quality was immediately apparent."),
+ ("hd7","https://www.anthropic.com/engineering/harness-design-long-running-apps","Opus 4.5 largely removed that behavior on its own, so I was able to drop context resets from this harness entirely."),
+ ("hd8","https://www.anthropic.com/engineering/harness-design-long-running-apps","Out of the box, Claude is a poor QA agent. In early runs, I watched it identify legitimate issues, then talk itself into deciding they weren't a big deal and approve the work anyway."),
+ ("mg1","https://www.anthropic.com/engineering/managed-agents","harnesses encode assumptions about what Claude can’t do on its own. However, those assumptions need to be frequently questioned because they can go stale as models improve."),
+ ("mg2","https://www.anthropic.com/engineering/managed-agents","The resets had become dead weight."),
+ ("cc_c1","https://www.anthropic.com/engineering/building-c-compiler","it’s important that the task verifier is nearly perfect, otherwise Claude will solve the wrong problem"),
+ ("cc_c2","https://www.anthropic.com/engineering/building-c-compiler","if there are errors, Claude should write ERROR and put the reason on the same line so grep will find it"),
+ ("cc_c3","https://www.anthropic.com/engineering/building-c-compiler","it is easy to see tests pass and assume the job is done, when this is rarely the case"),
+ ("pb1","https://docs.claude.com/en/docs/build-with-claude/prompt-engineering/claude-4-best-practices.md","Providing context or motivation behind your instructions, such as explaining to Claude why such behavior is important, can help Claude better understand your goals"),
+ ("pb2","https://docs.claude.com/en/docs/build-with-claude/prompt-engineering/claude-4-best-practices.md","Where you might have said \"CRITICAL: You MUST use this tool when...\", you can use more normal prompting like \"Use this tool when...\"."),
+ ("pb3","https://docs.claude.com/en/docs/build-with-claude/prompt-engineering/claude-4-best-practices.md","Don't add docstrings, comments, or type annotations to code you didn't change. Only add comments where the logic isn't self-evident."),
+ ("pb4","https://docs.claude.com/en/docs/build-with-claude/prompt-engineering/claude-4-best-practices.md","Do not hard-code values or create solutions that only work for specific test inputs."),
+ ("pb5","https://docs.claude.com/en/docs/build-with-claude/prompt-engineering/claude-4-best-practices.md","Tests are there to verify correctness, not to define the solution."),
+ ("pb6","https://docs.claude.com/en/docs/build-with-claude/prompt-engineering/claude-4-best-practices.md","Include 3–5 examples for best results."),
+ ("pb7","https://docs.claude.com/en/docs/build-with-claude/prompt-engineering/claude-4-best-practices.md","**Use a different prompt for the very first context window:**"),
+ ("pb8","https://docs.claude.com/en/docs/build-with-claude/prompt-engineering/claude-4-best-practices.md","Claude's latest models are extremely effective at discovering state from the local filesystem."),
+ ("pb9","https://docs.claude.com/en/docs/build-with-claude/prompt-engineering/claude-4-best-practices.md","Claude Opus 4.6 has a strong predilection for subagents and may spawn them in situations where a simpler, direct approach would suffice."),
+ ("pb10","https://docs.claude.com/en/docs/build-with-claude/prompt-engineering/claude-4-best-practices.md","Tell Claude what to do instead of what not to do"),
+ ("pb11","https://docs.claude.com/en/docs/build-with-claude/prompt-engineering/claude-4-best-practices.md","Claude is smart enough to generalize from the explanation."),
+ ("pb12","https://docs.claude.com/en/docs/build-with-claude/prompt-engineering/claude-4-best-practices.md","have a tendency to overengineer by creating extra files, adding unnecessary abstractions, or building in flexibility that wasn't requested"),
+ ("o5a","https://docs.claude.com/en/docs/build-with-claude/prompt-engineering/prompting-claude-opus-5.md","instructions like these cause over-verification on Claude Opus 5, and removing them reduces wasted tokens with no loss in quality. The same applies to legacy harness scaffolding that adds separate verification steps."),
+ ("o5b","https://docs.claude.com/en/docs/build-with-claude/prompt-engineering/prompting-claude-opus-5.md","do not use subagents to verify or double-check your own work"),
+ ("o5c","https://docs.claude.com/en/docs/build-with-claude/prompt-engineering/prompting-claude-opus-5.md","If your review prompt says \"only report high-severity issues\" or \"be conservative,\" the model may follow that instruction literally and report less; ask it to report everything and filter in a separate pass instead."),
+ ("o5d","https://docs.claude.com/en/docs/build-with-claude/prompt-engineering/prompting-claude-opus-5.md","files that Claude Opus 5 writes to disk (reports, Markdown documents, summaries) are often longer than on prior models"),
+ ("o5e","https://docs.claude.com/en/docs/build-with-claude/prompt-engineering/prompting-claude-opus-5.md","Avoid instructing re-checks it already performs (\"double-check your answer,\" \"re-verify before responding\")"),
+ ("o5f","https://docs.claude.com/en/docs/build-with-claude/prompt-engineering/prompting-claude-opus-5.md","the deterministic caps are the `CLAUDE_CODE_MAX_SUBAGENT_SPAWN_DEPTH` and `CLAUDE_CODE_MAX_CONCURRENT_SUBAGENTS` environment variables"),
+ ("o5g","https://docs.claude.com/en/docs/build-with-claude/prompt-engineering/prompting-claude-opus-5.md","It completes full tasks rather than leaving stubs or placeholders, and it performs best when given the complete task specification up front and left to run."),
+ ("s5a","https://docs.claude.com/en/docs/build-with-claude/prompt-engineering/prompting-claude-sonnet-5.md","It does not silently generalize an instruction from one item to another, and it does not infer requests you didn't make."),
+ ("s5b","https://docs.claude.com/en/docs/build-with-claude/prompt-engineering/prompting-claude-sonnet-5.md","If you've added scaffolding to force interim status messages (\"After every 3 tool calls, summarize progress\"), try removing it."),
+ ("s5c","https://docs.claude.com/en/docs/build-with-claude/prompt-engineering/prompting-claude-sonnet-5.md","Report every issue you find, including ones you are uncertain about or consider low-severity."),
+ ("sa1","https://docs.claude.com/en/docs/claude-code/sub-agents.md","**CLAUDE.md files**: every level of the [CLAUDE.md hierarchy]"),
+ ("sa2","https://docs.claude.com/en/docs/claude-code/sub-agents.md","Latency matters. A subagent that isn't a [fork](#fork-the-current-conversation) starts fresh and may need time to gather context"),
+ ("hk1","https://docs.claude.com/en/docs/claude-code/hooks-guide.md","which gives you deterministic control: certain actions always happen rather than relying on the LLM to choose to run them"),
+ ("hk2","https://docs.claude.com/en/docs/claude-code/hooks-guide.md","Claude Code overrides a Stop hook after it blocks eight times in a row without progress."),
+ ("hk3","https://docs.claude.com/en/docs/claude-code/hooks-guide.md","Use prompt hooks when the hook input data alone is enough to make a decision. Use agent hooks when you need to verify something against the actual state of the codebase."),
+ ("cs1","https://docs.claude.com/en/docs/claude-code/skills.md","Once a skill loads, its content [stays in context across turns](#skill-content-lifecycle), so every line is a recurring token cost. State what to do rather than narrating how or why"),
+ ("cs2","https://docs.claude.com/en/docs/claude-code/skills.md","or use [hooks](/docs/en/hooks) to enforce behavior deterministically"),
+ ("cs3","https://docs.claude.com/en/docs/claude-code/skills.md","keeping the first 5,000 tokens of each. Re-attached skills share a combined budget of 25,000 tokens."),
+ ("pe1","https://docs.claude.com/en/docs/claude-code/plugin-evals.md","If a case scores 1.0 both with and without the plugin, the plugin isn't what made it pass."),
+ ("pe2","https://docs.claude.com/en/docs/claude-code/plugin-evals.md","One run of a non-deterministic agent tells you little, so each case runs three times by default."),
+ ("wf1","https://code.claude.com/docs/en/workflows.md","A workflow script holds the loop, the branching, and the intermediate results itself, so Claude's context holds only the final answer."),
+ ("wf2","https://code.claude.com/docs/en/workflows.md","it can have independent agents adversarially review each other's findings before they're reported"),
+ ("pl1","https://docs.claude.com/en/docs/claude-code/plugins.md","If set, users only receive updates when you bump this field"),
+ ("mas1","https://www.anthropic.com/research/multiagent-systems","when one agent makes a bad decision, it is likely that many agents will make that same bad decision"),
+ ("mas2","https://www.anthropic.com/research/multiagent-systems","Individual agents are “low variance”: they often act the same in situations where different people might take a much more diverse range of actions."),
+ ("cx1","https://www.anthropic.com/engineering/code-execution-with-mcp","This reduces the token usage from 150,000 tokens to 2,000 tokens—a time and cost saving of 98.7%"),
+ ("de1","https://www.anthropic.com/engineering/demystifying-evals-for-ai-agents","first for narrow areas like concision and file edits, and then for more complex behaviors like over-engineering"),
+ ("de2","https://www.anthropic.com/engineering/demystifying-evals-for-ai-agents","Tasks and graders should be designed so that passing genuinely requires solving the problem rather than exploiting unintended loopholes."),
+ ("de3","https://www.anthropic.com/engineering/demystifying-evals-for-ai-agents","Regression evals ask, “Does the agent still handle all the tasks it used to?”"),
+]
+
+cache = {}
+bad = 0
+for key, url, q in Q:
+    if url not in cache:
+        cache[url] = norm(get(url)[1])
+    ok = norm(q) in cache[url]
+    if not ok:
+        bad += 1
+        print("MISS", key, "|", q[:90])
+print(f"checked={len(Q)} miss={bad}")

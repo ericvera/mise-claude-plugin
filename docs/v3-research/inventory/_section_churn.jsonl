@@ -1,0 +1,287 @@
+{"sha": "39de741", "date": "2026-03-16", "file": "README.md", "section": "(new file)", "added": 2, "removed": 0}
+{"sha": "bc94c76", "date": "2026-03-16", "file": ".claude/skills/create-html-mock/SKILL.md", "section": "(top)", "added": 61, "removed": 0}
+{"sha": "bc94c76", "date": "2026-03-16", "file": ".claude/skills/execute-implementation-plan/SKILL.md", "section": "(top)", "added": 48, "removed": 0}
+{"sha": "bc94c76", "date": "2026-03-16", "file": ".claude/skills/execute-implementation-plan/implement_task.md", "section": "(top)", "added": 59, "removed": 0}
+{"sha": "bc94c76", "date": "2026-03-16", "file": ".claude/skills/extract-requirements-from-mock/SKILL.md", "section": "(top)", "added": 54, "removed": 0}
+{"sha": "bc94c76", "date": "2026-03-16", "file": ".claude/skills/fix-bug/SKILL.md", "section": "(top)", "added": 169, "removed": 0}
+{"sha": "bc94c76", "date": "2026-03-16", "file": ".claude/skills/review-goals/SKILL.md", "section": "(top)", "added": 23, "removed": 0}
+{"sha": "bc94c76", "date": "2026-03-16", "file": ".claude/skills/workflow-config.md", "section": "(top)", "added": 89, "removed": 0}
+{"sha": "bc94c76", "date": "2026-03-16", "file": ".claude/skills/write-architecture/SKILL.md", "section": "(top)", "added": 42, "removed": 0}
+{"sha": "bc94c76", "date": "2026-03-16", "file": ".claude/skills/write-implementation-plan/SKILL.md", "section": "(top)", "added": 192, "removed": 0}
+{"sha": "bc94c76", "date": "2026-03-16", "file": ".claude/skills/write-requirements/SKILL.md", "section": "(top)", "added": 35, "removed": 0}
+{"sha": "bc94c76", "date": "2026-03-16", "file": "README.md", "section": "workflow-skills", "added": 38, "removed": 2}
+{"sha": "620fd53", "date": "2026-04-25", "file": ".claude/skills/execute-implementation-plan/implement_task.md", "section": "Implement Task", "added": 2, "removed": 0}
+{"sha": "620fd53", "date": "2026-04-25", "file": ".claude/skills/execute-implementation-plan/implement_task.md", "section": "Steps", "added": 1, "removed": 1}
+{"sha": "d7eaee0", "date": "2026-04-25", "file": ".claude/skills/write-implementation-plan/SKILL.md", "section": "Steps", "added": 5, "removed": 3}
+{"sha": "3b8eef8", "date": "2026-04-25", "file": ".claude/skills/extract-requirements-from-mock/SKILL.md", "section": "Steps", "added": 21, "removed": 4}
+{"sha": "af4dcf8", "date": "2026-04-25", "file": "README.md", "section": "Workflow", "added": 16, "removed": 0}
+{"sha": "a7cc237", "date": "2026-04-25", "file": ".claude/skills/execute-implementation-plan/SKILL.md", "section": "Before starting", "added": 16, "removed": 2}
+{"sha": "a7cc237", "date": "2026-04-25", "file": ".claude/skills/write-implementation-plan/SKILL.md", "section": "`00_overview.md` format", "added": 13, "removed": 1}
+{"sha": "c4835cd", "date": "2026-04-25", "file": ".claude/skills/execute-implementation-plan/implement_task.md", "section": "CRITICAL: No pre-existing failures", "added": 7, "removed": 2}
+{"sha": "598aa7c", "date": "2026-04-25", "file": ".claude/skills/create-html-mock/SKILL.md", "section": "Create HTML Mock", "added": 1, "removed": 1}
+{"sha": "598aa7c", "date": "2026-04-25", "file": ".claude/skills/execute-implementation-plan/SKILL.md", "section": "Execute Implementation Plan", "added": 1, "removed": 1}
+{"sha": "598aa7c", "date": "2026-04-25", "file": ".claude/skills/execute-implementation-plan/implement_task.md", "section": "Implement Task", "added": 1, "removed": 1}
+{"sha": "598aa7c", "date": "2026-04-25", "file": ".claude/skills/extract-requirements-from-mock/SKILL.md", "section": "Extract Requirements from Mock", "added": 1, "removed": 1}
+{"sha": "598aa7c", "date": "2026-04-25", "file": ".claude/skills/fix-bug/SKILL.md", "section": "Fix Bug (Test-Driven Bug Fix)", "added": 1, "removed": 1}
+{"sha": "598aa7c", "date": "2026-04-25", "file": ".claude/skills/review-goals/SKILL.md", "section": "Review Goals Document", "added": 1, "removed": 1}
+{"sha": "598aa7c", "date": "2026-04-25", "file": ".claude/skills/write-architecture/SKILL.md", "section": "Write Architecture Document", "added": 1, "removed": 1}
+{"sha": "598aa7c", "date": "2026-04-25", "file": ".claude/skills/write-implementation-plan/SKILL.md", "section": "Write Implementation Plan", "added": 1, "removed": 1}
+{"sha": "598aa7c", "date": "2026-04-25", "file": ".claude/skills/write-requirements/SKILL.md", "section": "Write Requirements Document", "added": 1, "removed": 1}
+{"sha": "598aa7c", "date": "2026-04-25", "file": ".claude/workflow-config.md", "section": "(new file)", "added": 1, "removed": 1}
+{"sha": "e94148a", "date": "2026-04-25", "file": ".claude/skills/execute-implementation-plan/implement_task.md", "section": "Steps", "added": 2, "removed": 2}
+{"sha": "e94148a", "date": "2026-04-25", "file": ".claude/skills/fix-bug/SKILL.md", "section": "After the test passes", "added": 1, "removed": 1}
+{"sha": "e94148a", "date": "2026-04-25", "file": ".claude/workflow-config.md", "section": "Quality commands", "added": 23, "removed": 0}
+{"sha": "823501d", "date": "2026-04-25", "file": ".claude/skills/create-html-mock/SKILL.md", "section": "Creating the Mocks", "added": 1, "removed": 1}
+{"sha": "823501d", "date": "2026-04-25", "file": ".claude/workflow-config.md", "section": "Product identity", "added": 4, "removed": 3}
+{"sha": "aee7cd1", "date": "2026-04-25", "file": ".claude/skills/create-html-mock/SKILL.md", "section": "(top)", "added": 1, "removed": 1}
+{"sha": "aee7cd1", "date": "2026-04-25", "file": ".claude/skills/extract-requirements-from-mock/SKILL.md", "section": "(top)", "added": 1, "removed": 1}
+{"sha": "aee7cd1", "date": "2026-04-25", "file": ".claude/skills/fix-bug/SKILL.md", "section": "(top)", "added": 1, "removed": 0}
+{"sha": "d221a55", "date": "2026-04-25", "file": ".claude/skills/extract-requirements-from-mock/SKILL.md", "section": "Steps", "added": 1, "removed": 1}
+{"sha": "3bf63b2", "date": "2026-05-05", "file": ".claude/workflow-config.md", "section": "Quality commands", "added": 0, "removed": 21}
+{"sha": "3bf63b2", "date": "2026-05-05", "file": ".claude/workflow-config.md", "section": "Product identity", "added": 1, "removed": 2}
+{"sha": "1ccaa16", "date": "2026-05-05", "file": ".claude/workflow-config.md", "section": "Workflow Configuration", "added": 3, "removed": 2}
+{"sha": "1ccaa16", "date": "2026-05-05", "file": ".claude/workflow-config.md", "section": "Feature docs directory", "added": 12, "removed": 0}
+{"sha": "accf5e3", "date": "2026-05-05", "file": ".claude/skills/setup-workflow/SKILL.md", "section": "(top)", "added": 47, "removed": 0}
+{"sha": "0190e87", "date": "2026-05-05", "file": ".claude/skills/next/SKILL.md", "section": "(top)", "added": 93, "removed": 0}
+{"sha": "0190e87", "date": "2026-05-05", "file": "README.md", "section": "Workflow", "added": 2, "removed": 0}
+{"sha": "0190e87", "date": "2026-05-05", "file": "README.md", "section": "Interactivity", "added": 2, "removed": 0}
+{"sha": "3cc5680", "date": "2026-05-13", "file": ".claude/skills/setup-workflow/SKILL.md", "section": "Set up workflow", "added": 7, "removed": 1}
+{"sha": "933797a", "date": "2026-05-13", "file": ".claude/skills/update-workflows/SKILL.md", "section": "(top)", "added": 46, "removed": 0}
+{"sha": "44d2cd4", "date": "2026-05-13", "file": ".claude/skills/_shared/interaction.md", "section": "(top)", "added": 35, "removed": 0}
+{"sha": "44d2cd4", "date": "2026-05-13", "file": ".claude/skills/create-html-mock/SKILL.md", "section": "Create HTML Mock", "added": 2, "removed": 0}
+{"sha": "44d2cd4", "date": "2026-05-13", "file": ".claude/skills/execute-implementation-plan/SKILL.md", "section": "Execute Implementation Plan", "added": 2, "removed": 0}
+{"sha": "44d2cd4", "date": "2026-05-13", "file": ".claude/skills/extract-requirements-from-mock/SKILL.md", "section": "Extract Requirements from Mock", "added": 2, "removed": 0}
+{"sha": "44d2cd4", "date": "2026-05-13", "file": ".claude/skills/fix-bug/SKILL.md", "section": "Fix Bug (Test-Driven Bug Fix)", "added": 2, "removed": 0}
+{"sha": "44d2cd4", "date": "2026-05-13", "file": ".claude/skills/next/SKILL.md", "section": "Next", "added": 2, "removed": 0}
+{"sha": "44d2cd4", "date": "2026-05-13", "file": ".claude/skills/review-goals/SKILL.md", "section": "Review Goals Document", "added": 2, "removed": 0}
+{"sha": "44d2cd4", "date": "2026-05-13", "file": ".claude/skills/setup-workflow/SKILL.md", "section": "Set up workflow", "added": 2, "removed": 0}
+{"sha": "44d2cd4", "date": "2026-05-13", "file": ".claude/skills/setup-workflow/SKILL.md", "section": "2. Replace each `<PLACEHOLDER>`", "added": 6, "removed": 0}
+{"sha": "44d2cd4", "date": "2026-05-13", "file": ".claude/skills/update-workflows/SKILL.md", "section": "Update workflows", "added": 3, "removed": 1}
+{"sha": "44d2cd4", "date": "2026-05-13", "file": ".claude/skills/write-architecture/SKILL.md", "section": "Write Architecture Document", "added": 2, "removed": 0}
+{"sha": "44d2cd4", "date": "2026-05-13", "file": ".claude/skills/write-implementation-plan/SKILL.md", "section": "Write Implementation Plan", "added": 2, "removed": 0}
+{"sha": "44d2cd4", "date": "2026-05-13", "file": ".claude/skills/write-requirements/SKILL.md", "section": "Write Requirements Document", "added": 2, "removed": 0}
+{"sha": "44d2cd4", "date": "2026-05-13", "file": ".claude/workflow-config.md", "section": "Workflow Configuration", "added": 13, "removed": 0}
+{"sha": "ddc3b52", "date": "2026-05-13", "file": ".claude/skills/execute-implementation-plan/SKILL.md", "section": "Executing tasks", "added": 17, "removed": 1}
+{"sha": "ddc3b52", "date": "2026-05-13", "file": ".claude/skills/execute-implementation-plan/SKILL.md", "section": "Do not", "added": 2, "removed": 1}
+{"sha": "ddc3b52", "date": "2026-05-13", "file": ".claude/skills/execute-implementation-plan/implement_task.md", "section": "Steps", "added": 5, "removed": 4}
+{"sha": "ddc3b52", "date": "2026-05-13", "file": ".claude/skills/write-implementation-plan/SKILL.md", "section": "Steps", "added": 5, "removed": 1}
+{"sha": "ddc3b52", "date": "2026-05-13", "file": ".claude/skills/write-implementation-plan/SKILL.md", "section": "Design principles", "added": 1, "removed": 0}
+{"sha": "4bd508d", "date": "2026-05-13", "file": ".claude/skills/_shared/interaction.md", "section": "Asking the user questions", "added": 19, "removed": 0}
+{"sha": "f365995", "date": "2026-05-14", "file": ".claude/skills/execute-implementation-plan/implement_task.md", "section": "Steps", "added": 3, "removed": 3}
+{"sha": "f365995", "date": "2026-05-14", "file": ".claude/skills/setup-workflow/SKILL.md", "section": "2. Replace each `<PLACEHOLDER>`", "added": 1, "removed": 0}
+{"sha": "f365995", "date": "2026-05-14", "file": ".claude/workflow-config.md", "section": "Quality commands", "added": 15, "removed": 0}
+{"sha": "972e826", "date": "2026-05-14", "file": ".claude/skills/execute-implementation-plan/implement_task.md", "section": "CRITICAL: Triage failures before fixing them", "added": 2, "removed": 7}
+{"sha": "972e826", "date": "2026-05-14", "file": ".claude/skills/execute-implementation-plan/implement_task.md", "section": "Steps", "added": 1, "removed": 1}
+{"sha": "ffc5890", "date": "2026-05-14", "file": ".claude/skills/execute-implementation-plan/SKILL.md", "section": "Stopping rules", "added": 1, "removed": 15}
+{"sha": "ffc5890", "date": "2026-05-14", "file": ".claude/skills/execute-implementation-plan/implement_task.md", "section": "Steps", "added": 5, "removed": 5}
+{"sha": "ffc5890", "date": "2026-05-14", "file": ".claude/skills/extract-requirements-from-mock/SKILL.md", "section": "Steps", "added": 3, "removed": 6}
+{"sha": "ffc5890", "date": "2026-05-14", "file": ".claude/skills/write-implementation-plan/SKILL.md", "section": "Steps", "added": 1, "removed": 5}
+{"sha": "ffc5890", "date": "2026-05-14", "file": ".claude/skills/write-implementation-plan/SKILL.md", "section": "Design principles", "added": 1, "removed": 1}
+{"sha": "642a30b", "date": "2026-05-14", "file": ".claude/skills/execute-implementation-plan/implement_task.md", "section": "Steps", "added": 5, "removed": 5}
+{"sha": "771e196", "date": "2026-05-14", "file": ".claude/skills/execute-implementation-plan/implement_task.md", "section": "Steps", "added": 1, "removed": 1}
+{"sha": "771e196", "date": "2026-05-14", "file": ".claude/skills/fix-bug/SKILL.md", "section": "After the test passes", "added": 1, "removed": 1}
+{"sha": "771e196", "date": "2026-05-14", "file": ".claude/workflow-config.md", "section": "Quality commands", "added": 1, "removed": 1}
+{"sha": "a42137b", "date": "2026-05-14", "file": ".claude/skills/extract-requirements-from-mock/SKILL.md", "section": "Steps", "added": 0, "removed": 8}
+{"sha": "80ffb3f", "date": "2026-05-14", "file": ".claude/skills/setup-workflow/SKILL.md", "section": "3. Add an optional Backlog section", "added": 1, "removed": 1}
+{"sha": "c926cc3", "date": "2026-05-14", "file": ".claude/skills/execute-implementation-plan/SKILL.md", "section": "Before starting", "added": 2, "removed": 16}
+{"sha": "c926cc3", "date": "2026-05-14", "file": ".claude/skills/write-implementation-plan/SKILL.md", "section": "`00_overview.md` format", "added": 1, "removed": 13}
+{"sha": "50c377e", "date": "2026-07-13", "file": ".claude-plugin/plugin.json", "section": "(top)", "added": 21, "removed": 0}
+{"sha": "50c377e", "date": "2026-07-13", "file": ".claude/skills/_shared/interaction.md", "section": "Shared interaction conventions", "added": 0, "removed": 54}
+{"sha": "50c377e", "date": "2026-07-13", "file": ".claude/skills/create-html-mock/SKILL.md", "section": "(top)", "added": 0, "removed": 61}
+{"sha": "50c377e", "date": "2026-07-13", "file": ".claude/skills/execute-implementation-plan/SKILL.md", "section": "(top)", "added": 0, "removed": 51}
+{"sha": "50c377e", "date": "2026-07-13", "file": ".claude/skills/execute-implementation-plan/implement_task.md", "section": "Implement Task", "added": 0, "removed": 62}
+{"sha": "50c377e", "date": "2026-07-13", "file": ".claude/skills/extract-requirements-from-mock/SKILL.md", "section": "(top)", "added": 0, "removed": 60}
+{"sha": "50c377e", "date": "2026-07-13", "file": ".claude/skills/fix-bug/SKILL.md", "section": "(top)", "added": 0, "removed": 170}
+{"sha": "50c377e", "date": "2026-07-13", "file": ".claude/skills/next/SKILL.md", "section": "(top)", "added": 0, "removed": 93}
+{"sha": "50c377e", "date": "2026-07-13", "file": ".claude/skills/review-goals/SKILL.md", "section": "(top)", "added": 0, "removed": 23}
+{"sha": "50c377e", "date": "2026-07-13", "file": ".claude/skills/setup-workflow/SKILL.md", "section": "(top)", "added": 0, "removed": 60}
+{"sha": "50c377e", "date": "2026-07-13", "file": ".claude/skills/update-workflows/SKILL.md", "section": "(top)", "added": 0, "removed": 46}
+{"sha": "50c377e", "date": "2026-07-13", "file": ".claude/skills/write-architecture/SKILL.md", "section": "(top)", "added": 0, "removed": 42}
+{"sha": "50c377e", "date": "2026-07-13", "file": ".claude/skills/write-implementation-plan/SKILL.md", "section": "(top)", "added": 0, "removed": 195}
+{"sha": "50c377e", "date": "2026-07-13", "file": ".claude/skills/write-requirements/SKILL.md", "section": "(top)", "added": 0, "removed": 35}
+{"sha": "50c377e", "date": "2026-07-13", "file": ".claude/workflow-config.md", "section": "Workflow Configuration", "added": 0, "removed": 131}
+{"sha": "50c377e", "date": "2026-07-13", "file": "README.md", "section": "Claude Code workflow skills", "added": 2, "removed": 2}
+{"sha": "50c377e", "date": "2026-07-13", "file": "README.md", "section": "Overview", "added": 7, "removed": 9}
+{"sha": "50c377e", "date": "2026-07-13", "file": "README.md", "section": "Workflow", "added": 9, "removed": 13}
+{"sha": "50c377e", "date": "2026-07-13", "file": "README.md", "section": "Interactivity", "added": 9, "removed": 16}
+{"sha": "50c377e", "date": "2026-07-13", "file": "README.md", "section": "Disclaimer", "added": 51, "removed": 2}
+{"sha": "50c377e", "date": "2026-07-13", "file": "docs/skill-authoring.md", "section": "(top)", "added": 45, "removed": 0}
+{"sha": "50c377e", "date": "2026-07-13", "file": "docs/state-machine.md", "section": "(top)", "added": 76, "removed": 0}
+{"sha": "50c377e", "date": "2026-07-13", "file": "skills/next/SKILL.md", "section": "(top)", "added": 146, "removed": 0}
+{"sha": "50c377e", "date": "2026-07-13", "file": "skills/next/references/config-reference.md", "section": "(top)", "added": 82, "removed": 0}
+{"sha": "50c377e", "date": "2026-07-13", "file": "skills/next/references/interaction.md", "section": "(top)", "added": 61, "removed": 0}
+{"sha": "50c377e", "date": "2026-07-13", "file": "skills/next/scripts/state.test.ts", "section": "(top)", "added": 395, "removed": 0}
+{"sha": "50c377e", "date": "2026-07-13", "file": "skills/next/scripts/state.ts", "section": "(top)", "added": 476, "removed": 0}
+{"sha": "50c377e", "date": "2026-07-13", "file": "skills/next/stages/execute.md", "section": "(top)", "added": 61, "removed": 0}
+{"sha": "50c377e", "date": "2026-07-13", "file": "skills/next/stages/goals.md", "section": "(top)", "added": 74, "removed": 0}
+{"sha": "50c377e", "date": "2026-07-13", "file": "skills/next/stages/implement_task.md", "section": "(top)", "added": 75, "removed": 0}
+{"sha": "50c377e", "date": "2026-07-13", "file": "skills/next/stages/plan.md", "section": "(top)", "added": 170, "removed": 0}
+{"sha": "50c377e", "date": "2026-07-13", "file": "skills/next/stages/requirements.md", "section": "(top)", "added": 49, "removed": 0}
+{"sha": "50c377e", "date": "2026-07-13", "file": "skills/next/stages/setup.md", "section": "(top)", "added": 25, "removed": 0}
+{"sha": "d313ce6", "date": "2026-07-14", "file": ".claude-plugin/plugin.json", "section": "(top)", "added": 1, "removed": 1}
+{"sha": "d313ce6", "date": "2026-07-14", "file": "README.md", "section": "Install", "added": 4, "removed": 1}
+{"sha": "d313ce6", "date": "2026-07-14", "file": "skills/next/stages/implement_task.md", "section": "Steps", "added": 2, "removed": 1}
+{"sha": "f3549a5", "date": "2026-07-14", "file": "README.md", "section": "Install", "added": 6, "removed": 0}
+{"sha": "f374756", "date": "2026-07-15", "file": ".claude-plugin/plugin.json", "section": "(top)", "added": 1, "removed": 1}
+{"sha": "f374756", "date": "2026-07-15", "file": "README.md", "section": "How it works", "added": 2, "removed": 2}
+{"sha": "f374756", "date": "2026-07-15", "file": "skills/next/references/interaction.md", "section": "The critic gate (requirements and plan stages)", "added": 6, "removed": 4}
+{"sha": "f374756", "date": "2026-07-15", "file": "skills/next/stages/goals.md", "section": "1. Critique", "added": 2, "removed": 0}
+{"sha": "f374756", "date": "2026-07-15", "file": "skills/next/stages/goals.md", "section": "4. Mock (`full` route only)", "added": 1, "removed": 0}
+{"sha": "a4e3846", "date": "2026-07-16", "file": ".claude-plugin/plugin.json", "section": "(top)", "added": 1, "removed": 1}
+{"sha": "a4e3846", "date": "2026-07-16", "file": "skills/next/stages/goals.md", "section": "4. Mock (`full` route only)", "added": 6, "removed": 1}
+{"sha": "a4e3846", "date": "2026-07-16", "file": "skills/next/stages/requirements.md", "section": "Sources", "added": 1, "removed": 1}
+{"sha": "a4e3846", "date": "2026-07-16", "file": "skills/next/stages/requirements.md", "section": "Critic gate", "added": 1, "removed": 1}
+{"sha": "c9d5646", "date": "2026-07-17", "file": ".claude-plugin/plugin.json", "section": "(top)", "added": 1, "removed": 1}
+{"sha": "c9d5646", "date": "2026-07-17", "file": "README.md", "section": "Usage", "added": 1, "removed": 1}
+{"sha": "c9d5646", "date": "2026-07-17", "file": "README.md", "section": "How it works", "added": 1, "removed": 1}
+{"sha": "c9d5646", "date": "2026-07-17", "file": "skills/next/SKILL.md", "section": "(top)", "added": 1, "removed": 1}
+{"sha": "c9d5646", "date": "2026-07-17", "file": "skills/next/SKILL.md", "section": "Load context", "added": 1, "removed": 1}
+{"sha": "c9d5646", "date": "2026-07-17", "file": "skills/next/SKILL.md", "section": "Continue or start the work", "added": 4, "removed": 1}
+{"sha": "c9d5646", "date": "2026-07-17", "file": "skills/next/references/config-reference.md", "section": "Generated file shape", "added": 1, "removed": 0}
+{"sha": "c9d5646", "date": "2026-07-17", "file": "skills/next/references/config-reference.md", "section": "Section reference", "added": 1, "removed": 0}
+{"sha": "c9d5646", "date": "2026-07-17", "file": "skills/next/stages/setup.md", "section": "Interview", "added": 1, "removed": 1}
+{"sha": "58d4b1a", "date": "2026-07-18", "file": ".claude-plugin/plugin.json", "section": "(top)", "added": 1, "removed": 1}
+{"sha": "58d4b1a", "date": "2026-07-18", "file": "README.md", "section": "How it works", "added": 6, "removed": 3}
+{"sha": "58d4b1a", "date": "2026-07-18", "file": "docs/state-machine.md", "section": "Computing `next_action`", "added": 1, "removed": 1}
+{"sha": "58d4b1a", "date": "2026-07-18", "file": "skills/next/SKILL.md", "section": "Act on `next_action`", "added": 1, "removed": 1}
+{"sha": "58d4b1a", "date": "2026-07-18", "file": "skills/next/references/config-reference.md", "section": "Section reference", "added": 1, "removed": 0}
+{"sha": "58d4b1a", "date": "2026-07-18", "file": "skills/next/references/interaction.md", "section": "The human gate (goals stage only)", "added": 4, "removed": 0}
+{"sha": "58d4b1a", "date": "2026-07-18", "file": "skills/next/references/interaction.md", "section": "The critic gate (requirements and plan stages)", "added": 2, "removed": 2}
+{"sha": "58d4b1a", "date": "2026-07-18", "file": "skills/next/stages/execute.md", "section": "Executing tasks", "added": 2, "removed": 2}
+{"sha": "58d4b1a", "date": "2026-07-18", "file": "skills/next/stages/execute.md", "section": "Acceptance pass, then cleanup", "added": 11, "removed": 3}
+{"sha": "58d4b1a", "date": "2026-07-18", "file": "skills/next/stages/execute.md", "section": "Do not", "added": 1, "removed": 0}
+{"sha": "58d4b1a", "date": "2026-07-18", "file": "skills/next/stages/retrospective.md", "section": "(top)", "added": 50, "removed": 0}
+{"sha": "58d4b1a", "date": "2026-07-18", "file": "skills/next/stages/setup.md", "section": "Interview", "added": 1, "removed": 0}
+{"sha": "50b5f2b", "date": "2026-07-23", "file": ".claude-plugin/plugin.json", "section": "(top)", "added": 1, "removed": 1}
+{"sha": "50b5f2b", "date": "2026-07-23", "file": "README.md", "section": "How it works", "added": 3, "removed": 2}
+{"sha": "50b5f2b", "date": "2026-07-23", "file": "docs/state-machine.md", "section": "Engine commands", "added": 7, "removed": 6}
+{"sha": "50b5f2b", "date": "2026-07-23", "file": "docs/state-machine.md", "section": "State file format", "added": 1, "removed": 1}
+{"sha": "50b5f2b", "date": "2026-07-23", "file": "docs/state-machine.md", "section": "Computing `next_action`", "added": 4, "removed": 2}
+{"sha": "50b5f2b", "date": "2026-07-23", "file": "skills/next/SKILL.md", "section": "Act on `next_action`", "added": 2, "removed": 1}
+{"sha": "50b5f2b", "date": "2026-07-23", "file": "skills/next/SKILL.md", "section": "Report, then dispatch", "added": 1, "removed": 1}
+{"sha": "50b5f2b", "date": "2026-07-23", "file": "skills/next/references/config-reference.md", "section": "Generated file shape", "added": 1, "removed": 0}
+{"sha": "50b5f2b", "date": "2026-07-23", "file": "skills/next/references/config-reference.md", "section": "Section reference", "added": 1, "removed": 0}
+{"sha": "50b5f2b", "date": "2026-07-23", "file": "skills/next/scripts/state.test.ts", "section": "(top)", "added": 144, "removed": 2}
+{"sha": "50b5f2b", "date": "2026-07-23", "file": "skills/next/scripts/state.ts", "section": "(top)", "added": 130, "removed": 5}
+{"sha": "50b5f2b", "date": "2026-07-23", "file": "skills/next/stages/execute.md", "section": "Executing tasks", "added": 1, "removed": 0}
+{"sha": "50b5f2b", "date": "2026-07-23", "file": "skills/next/stages/execute.md", "section": "Acceptance pass, then retrospective, then cleanup", "added": 5, "removed": 3}
+{"sha": "50b5f2b", "date": "2026-07-23", "file": "skills/next/stages/execute.md", "section": "Do not", "added": 1, "removed": 0}
+{"sha": "50b5f2b", "date": "2026-07-23", "file": "skills/next/stages/plan.md", "section": "Input", "added": 1, "removed": 1}
+{"sha": "50b5f2b", "date": "2026-07-23", "file": "skills/next/stages/setup.md", "section": "Interview", "added": 1, "removed": 0}
+{"sha": "50b5f2b", "date": "2026-07-23", "file": "skills/next/stages/setup.md", "section": "Write and verify", "added": 7, "removed": 1}
+{"sha": "a55481c", "date": "2026-07-28", "file": ".claude/mise-config.md", "section": "(top)", "added": 25, "removed": 0}
+{"sha": "a55481c", "date": "2026-07-28", "file": "CLAUDE.md", "section": "(top)", "added": 3, "removed": 0}
+{"sha": "9a8634f", "date": "2026-07-28", "file": ".claude/mise-config.md", "section": "Skills & guides", "added": 6, "removed": 0}
+{"sha": "9a8634f", "date": "2026-07-28", "file": "CLAUDE.md", "section": "mise-claude-plugin", "added": 2, "removed": 0}
+{"sha": "9a8634f", "date": "2026-07-28", "file": "README.md", "section": "Usage", "added": 1, "removed": 1}
+{"sha": "9a8634f", "date": "2026-07-28", "file": "README.md", "section": "How it works", "added": 1, "removed": 1}
+{"sha": "9a8634f", "date": "2026-07-28", "file": "skills/next/references/config-reference.md", "section": "Generated file shape", "added": 6, "removed": 0}
+{"sha": "9a8634f", "date": "2026-07-28", "file": "skills/next/references/config-reference.md", "section": "Section reference", "added": 1, "removed": 0}
+{"sha": "9a8634f", "date": "2026-07-28", "file": "skills/next/references/interaction.md", "section": "The critic gate (requirements and plan stages)", "added": 1, "removed": 1}
+{"sha": "9a8634f", "date": "2026-07-28", "file": "skills/next/references/interaction.md", "section": "Assumptions instead of questions", "added": 4, "removed": 0}
+{"sha": "9a8634f", "date": "2026-07-28", "file": "skills/next/stages/execute.md", "section": "Executing tasks", "added": 2, "removed": 2}
+{"sha": "9a8634f", "date": "2026-07-28", "file": "skills/next/stages/execute.md", "section": "Acceptance pass, then retrospective, then cleanup, then ship", "added": 3, "removed": 3}
+{"sha": "9a8634f", "date": "2026-07-28", "file": "skills/next/stages/plan.md", "section": "Feature routes", "added": 1, "removed": 1}
+{"sha": "9a8634f", "date": "2026-07-28", "file": "skills/next/stages/setup.md", "section": "Interview", "added": 3, "removed": 2}
+{"sha": "28b1acd", "date": "2026-07-28", "file": ".claude-plugin/plugin.json", "section": "(top)", "added": 1, "removed": 1}
+{"sha": "4e828af", "date": "2026-08-14", "file": ".claude-plugin/plugin.json", "section": "(top)", "added": 1, "removed": 1}
+{"sha": "4e828af", "date": "2026-08-14", "file": ".claude/mise-config.md", "section": "Test exceptions", "added": 1, "removed": 1}
+{"sha": "4e828af", "date": "2026-08-14", "file": "CLAUDE.md", "section": "mise-claude-plugin", "added": 2, "removed": 0}
+{"sha": "4e828af", "date": "2026-08-14", "file": "README.md", "section": "How it works", "added": 1, "removed": 1}
+{"sha": "4e828af", "date": "2026-08-14", "file": "skills/next/references/interaction.md", "section": "The critic gate (requirements and plan stages)", "added": 17, "removed": 2}
+{"sha": "57655da", "date": "2026-08-19", "file": ".claude-plugin/plugin.json", "section": "(top)", "added": 2, "removed": 2}
+{"sha": "57655da", "date": "2026-08-19", "file": ".claude/mise-checklist.md", "section": "(top)", "added": 15, "removed": 0}
+{"sha": "57655da", "date": "2026-08-19", "file": ".claude/mise-config.md", "section": "Mise Configuration", "added": 1, "removed": 0}
+{"sha": "57655da", "date": "2026-08-19", "file": ".claude/mise-config.md", "section": "Test exceptions", "added": 1, "removed": 1}
+{"sha": "57655da", "date": "2026-08-19", "file": ".claude/mise-config.md", "section": "Skills & guides", "added": 4, "removed": 0}
+{"sha": "57655da", "date": "2026-08-19", "file": "README.md", "section": "mise \u2014 Claude Code workflow skills", "added": 1, "removed": 1}
+{"sha": "57655da", "date": "2026-08-19", "file": "README.md", "section": "Install", "added": 1, "removed": 1}
+{"sha": "57655da", "date": "2026-08-19", "file": "README.md", "section": "Usage", "added": 2, "removed": 3}
+{"sha": "57655da", "date": "2026-08-19", "file": "README.md", "section": "How it works", "added": 13, "removed": 11}
+{"sha": "57655da", "date": "2026-08-19", "file": "README.md", "section": "Design", "added": 4, "removed": 10}
+{"sha": "57655da", "date": "2026-08-19", "file": "README.md", "section": "Development", "added": 1, "removed": 1}
+{"sha": "57655da", "date": "2026-08-19", "file": "docs/skill-authoring.md", "section": "Skill authoring guide", "added": 2, "removed": 2}
+{"sha": "57655da", "date": "2026-08-19", "file": "docs/skill-authoring.md", "section": "Writing style", "added": 5, "removed": 6}
+{"sha": "57655da", "date": "2026-08-19", "file": "docs/skill-authoring.md", "section": "Structure", "added": 11, "removed": 11}
+{"sha": "57655da", "date": "2026-08-19", "file": "docs/skill-authoring.md", "section": "Agentic-loop patterns", "added": 8, "removed": 7}
+{"sha": "57655da", "date": "2026-08-19", "file": "docs/skill-authoring.md", "section": "Process", "added": 10, "removed": 4}
+{"sha": "57655da", "date": "2026-08-19", "file": "skills/next/SKILL.md", "section": "(top)", "added": 1, "removed": 1}
+{"sha": "57655da", "date": "2026-08-19", "file": "skills/next/SKILL.md", "section": "Next", "added": 4, "removed": 9}
+{"sha": "57655da", "date": "2026-08-19", "file": "skills/next/SKILL.md", "section": "Modes", "added": 4, "removed": 6}
+{"sha": "57655da", "date": "2026-08-19", "file": "skills/next/SKILL.md", "section": "Load context", "added": 11, "removed": 13}
+{"sha": "57655da", "date": "2026-08-19", "file": "skills/next/SKILL.md", "section": "The state engine", "added": 7, "removed": 8}
+{"sha": "57655da", "date": "2026-08-19", "file": "skills/next/SKILL.md", "section": "Continue or start the work", "added": 18, "removed": 19}
+{"sha": "57655da", "date": "2026-08-19", "file": "skills/next/SKILL.md", "section": "Act on `next_action`", "added": 1, "removed": 29}
+{"sha": "57655da", "date": "2026-08-19", "file": "skills/next/SKILL.md", "section": "Report, then dispatch", "added": 10, "removed": 1}
+{"sha": "57655da", "date": "2026-08-19", "file": "skills/next/SKILL.md", "section": "Stopping rules", "added": 1, "removed": 1}
+{"sha": "57655da", "date": "2026-08-19", "file": "skills/next/SKILL.md", "section": "Do not", "added": 3, "removed": 4}
+{"sha": "57655da", "date": "2026-08-19", "file": "skills/next/references/config-reference.md", "section": "mise-config reference", "added": 6, "removed": 8}
+{"sha": "57655da", "date": "2026-08-19", "file": "skills/next/references/config-reference.md", "section": "Generated file shape", "added": 8, "removed": 3}
+{"sha": "57655da", "date": "2026-08-19", "file": "skills/next/references/config-reference.md", "section": "Section reference", "added": 18, "removed": 21}
+{"sha": "57655da", "date": "2026-08-19", "file": "skills/next/references/interaction.md", "section": "Shared interaction conventions", "added": 1, "removed": 1}
+{"sha": "57655da", "date": "2026-08-19", "file": "skills/next/references/interaction.md", "section": "Gates", "added": 1, "removed": 1}
+{"sha": "57655da", "date": "2026-08-19", "file": "skills/next/references/interaction.md", "section": "The human gate (goals stage only)", "added": 3, "removed": 3}
+{"sha": "57655da", "date": "2026-08-19", "file": "skills/next/references/interaction.md", "section": "The friction log", "added": 9, "removed": 1}
+{"sha": "57655da", "date": "2026-08-19", "file": "skills/next/references/interaction.md", "section": "The critic gate (requirements and plan stages)", "added": 37, "removed": 21}
+{"sha": "57655da", "date": "2026-08-19", "file": "skills/next/references/interaction.md", "section": "Assumptions instead of questions", "added": 1, "removed": 1}
+{"sha": "57655da", "date": "2026-08-19", "file": "skills/next/references/interaction.md", "section": "Model routing", "added": 1, "removed": 1}
+{"sha": "57655da", "date": "2026-08-19", "file": "skills/next/references/interaction.md", "section": "Asking the user questions", "added": 1, "removed": 7}
+{"sha": "57655da", "date": "2026-08-19", "file": "skills/next/references/interaction.md", "section": "Recommendations", "added": 3, "removed": 7}
+{"sha": "57655da", "date": "2026-08-19", "file": "skills/next/references/interaction.md", "section": "Other lists", "added": 1, "removed": 1}
+{"sha": "57655da", "date": "2026-08-19", "file": "skills/next/roles/acceptance.md", "section": "(top)", "added": 25, "removed": 0}
+{"sha": "57655da", "date": "2026-08-19", "file": "skills/next/roles/critic.md", "section": "(top)", "added": 20, "removed": 0}
+{"sha": "57655da", "date": "2026-08-19", "file": "skills/next/roles/documenter.md", "section": "(top)", "added": 28, "removed": 0}
+{"sha": "57655da", "date": "2026-08-19", "file": "skills/next/roles/implementer.md", "section": "(top)", "added": 64, "removed": 0}
+{"sha": "57655da", "date": "2026-08-19", "file": "skills/next/roles/retrospective.md", "section": "(top)", "added": 61, "removed": 0}
+{"sha": "57655da", "date": "2026-08-19", "file": "skills/next/roles/reviewer.md", "section": "(top)", "added": 18, "removed": 0}
+{"sha": "57655da", "date": "2026-08-19", "file": "skills/next/stages/execute.md", "section": "Role", "added": 1, "removed": 1}
+{"sha": "57655da", "date": "2026-08-19", "file": "skills/next/stages/execute.md", "section": "Before starting", "added": 8, "removed": 5}
+{"sha": "57655da", "date": "2026-08-19", "file": "skills/next/stages/execute.md", "section": "Executing tasks", "added": 21, "removed": 15}
+{"sha": "57655da", "date": "2026-08-19", "file": "skills/next/stages/execute.md", "section": "Acceptance pass, then retrospective, then cleanup, then ship", "added": 47, "removed": 13}
+{"sha": "57655da", "date": "2026-08-19", "file": "skills/next/stages/execute.md", "section": "Stopping rules", "added": 1, "removed": 1}
+{"sha": "57655da", "date": "2026-08-19", "file": "skills/next/stages/execute.md", "section": "Do not", "added": 5, "removed": 8}
+{"sha": "57655da", "date": "2026-08-19", "file": "skills/next/stages/goals.md", "section": "Goals (and Mock)", "added": 1, "removed": 1}
+{"sha": "57655da", "date": "2026-08-19", "file": "skills/next/stages/goals.md", "section": "Input", "added": 1, "removed": 1}
+{"sha": "57655da", "date": "2026-08-19", "file": "skills/next/stages/goals.md", "section": "Bugfix route", "added": 6, "removed": 6}
+{"sha": "57655da", "date": "2026-08-19", "file": "skills/next/stages/goals.md", "section": "1. Critique", "added": 2, "removed": 9}
+{"sha": "57655da", "date": "2026-08-19", "file": "skills/next/stages/goals.md", "section": "2. One batched round of questions", "added": 4, "removed": 4}
+{"sha": "57655da", "date": "2026-08-19", "file": "skills/next/stages/goals.md", "section": "3. Route", "added": 1, "removed": 1}
+{"sha": "57655da", "date": "2026-08-19", "file": "skills/next/stages/goals.md", "section": "4. Mock (`full` route only)", "added": 3, "removed": 3}
+{"sha": "57655da", "date": "2026-08-19", "file": "skills/next/stages/goals.md", "section": "5. Iterate and gate", "added": 2, "removed": 2}
+{"sha": "57655da", "date": "2026-08-19", "file": "skills/next/stages/implement_task.md", "section": "Implement Task", "added": 0, "removed": 76}
+{"sha": "57655da", "date": "2026-08-19", "file": "skills/next/stages/plan.md", "section": "Write Implementation Plan", "added": 1, "removed": 1}
+{"sha": "57655da", "date": "2026-08-19", "file": "skills/next/stages/plan.md", "section": "Input", "added": 1, "removed": 1}
+{"sha": "57655da", "date": "2026-08-19", "file": "skills/next/stages/plan.md", "section": "Bugfix route", "added": 5, "removed": 6}
+{"sha": "57655da", "date": "2026-08-19", "file": "skills/next/stages/plan.md", "section": "Feature routes", "added": 8, "removed": 12}
+{"sha": "57655da", "date": "2026-08-19", "file": "skills/next/stages/plan.md", "section": "Output structure", "added": 1, "removed": 8}
+{"sha": "57655da", "date": "2026-08-19", "file": "skills/next/stages/plan.md", "section": "`00_overview.md` format", "added": 10, "removed": 6}
+{"sha": "57655da", "date": "2026-08-19", "file": "skills/next/stages/plan.md", "section": "Individual task file format", "added": 11, "removed": 13}
+{"sha": "57655da", "date": "2026-08-19", "file": "skills/next/stages/plan.md", "section": "Key rules for task files", "added": 3, "removed": 3}
+{"sha": "57655da", "date": "2026-08-19", "file": "skills/next/stages/plan.md", "section": "Design principles", "added": 4, "removed": 3}
+{"sha": "57655da", "date": "2026-08-19", "file": "skills/next/stages/plan.md", "section": "Database migrations", "added": 1, "removed": 1}
+{"sha": "57655da", "date": "2026-08-19", "file": "skills/next/stages/plan.md", "section": "Do not", "added": 2, "removed": 4}
+{"sha": "57655da", "date": "2026-08-19", "file": "skills/next/stages/requirements.md", "section": "Write Requirements", "added": 1, "removed": 5}
+{"sha": "57655da", "date": "2026-08-19", "file": "skills/next/stages/requirements.md", "section": "Sources", "added": 2, "removed": 2}
+{"sha": "57655da", "date": "2026-08-19", "file": "skills/next/stages/requirements.md", "section": "Writing the document", "added": 5, "removed": 7}
+{"sha": "57655da", "date": "2026-08-19", "file": "skills/next/stages/requirements.md", "section": "Critic gate", "added": 1, "removed": 1}
+{"sha": "57655da", "date": "2026-08-19", "file": "skills/next/stages/retrospective.md", "section": "Retrospective", "added": 0, "removed": 50}
+{"sha": "57655da", "date": "2026-08-19", "file": "skills/next/stages/setup.md", "section": "Set up mise", "added": 1, "removed": 3}
+{"sha": "57655da", "date": "2026-08-19", "file": "skills/next/stages/setup.md", "section": "Interview", "added": 34, "removed": 13}
+{"sha": "57655da", "date": "2026-08-19", "file": "skills/next/stages/setup.md", "section": "Write and verify", "added": 3, "removed": 3}
+{"sha": "b13fa5c", "date": "2026-09-12", "file": ".claude-plugin/plugin.json", "section": "(top)", "added": 2, "removed": 2}
+{"sha": "b13fa5c", "date": "2026-09-12", "file": "README.md", "section": "How it works", "added": 5, "removed": 5}
+{"sha": "b13fa5c", "date": "2026-09-12", "file": "docs/skill-authoring.md", "section": "Agentic-loop patterns", "added": 1, "removed": 1}
+{"sha": "b13fa5c", "date": "2026-09-12", "file": "skills/next/references/interaction.md", "section": "Model routing", "added": 1, "removed": 1}
+{"sha": "b13fa5c", "date": "2026-09-12", "file": "skills/next/roles/acceptance.md", "section": "What to check", "added": 2, "removed": 2}
+{"sha": "b13fa5c", "date": "2026-09-12", "file": "skills/next/roles/acceptance.md", "section": "Reporting back", "added": 1, "removed": 1}
+{"sha": "b13fa5c", "date": "2026-09-12", "file": "skills/next/roles/documenter.md", "section": "Documenter", "added": 5, "removed": 1}
+{"sha": "b13fa5c", "date": "2026-09-12", "file": "skills/next/roles/documenter.md", "section": "Steps", "added": 11, "removed": 6}
+{"sha": "b13fa5c", "date": "2026-09-12", "file": "skills/next/roles/documenter.md", "section": "Reporting back", "added": 1, "removed": 1}
+{"sha": "b13fa5c", "date": "2026-09-12", "file": "skills/next/roles/implementer.md", "section": "Steps", "added": 6, "removed": 3}
+{"sha": "b13fa5c", "date": "2026-09-12", "file": "skills/next/roles/reviewer.md", "section": "What to check", "added": 4, "removed": 4}
+{"sha": "b13fa5c", "date": "2026-09-12", "file": "skills/next/roles/reviewer.md", "section": "Reporting back", "added": 1, "removed": 1}
+{"sha": "b13fa5c", "date": "2026-09-12", "file": "skills/next/stages/execute.md", "section": "Before starting", "added": 4, "removed": 1}
+{"sha": "b13fa5c", "date": "2026-09-12", "file": "skills/next/stages/execute.md", "section": "Per task", "added": 16, "removed": 3}
+{"sha": "b13fa5c", "date": "2026-09-12", "file": "skills/next/stages/execute.md", "section": "End-of-plan gate", "added": 9, "removed": 17}
+{"sha": "b13fa5c", "date": "2026-09-12", "file": "skills/next/stages/execute.md", "section": "Acceptance and close-out", "added": 1, "removed": 1}
+{"sha": "b13fa5c", "date": "2026-09-12", "file": "skills/next/stages/setup.md", "section": "Interview", "added": 1, "removed": 1}
