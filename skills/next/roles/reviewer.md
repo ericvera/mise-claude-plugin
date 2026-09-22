@@ -15,4 +15,4 @@ Report correctness only:
 
 Test shape, comment register, naming and project conventions belong to the adherence step: never report them, and never report a cosmetic nit.
 
-Report each finding as `file:line — <quoted text> — <what is wrong> — <the fix>`, tagged **blocking** or **minor**. Nothing to report → exactly `none`. At most 10 findings, blocking first, then the count of what you dropped — the driver can only dispatch so many per fix round. Your message goes to the driver: findings, no narrative.
+Report each finding as `file:line — <quoted text> — <what is wrong> — <the fix>`, tagged **blocking** or **minor**. Nothing to report → exactly `none`. At most 10 findings, blocking first, then the count of what you dropped. Your message goes to the driver: findings, no narrative.

@@ -2,7 +2,7 @@
 
 Nine steps, in order. Answer every **Skip when** line at the start of the run and again after each amendment; a yes → `mark .mise <step> skipped` before that step's turn comes.
 
-Log as you go: `log .mise '<json>'` after every spawn (`{"event":"spawn","role":…,"step":…,"round":…,"minutes":…,"verdict":…}`), every skip (`{"event":"skip","step":…,"reason":…}`), every finding (`{"event":"finding","source":…,"round":…,"category":…,"changed":…}`), every stop at the owner (`{"event":"stop","step":…,"reason":…,"waitMinutes":…}`), and every gate command (`{"event":"gate","command":…,"seconds":…,"pass":…}`).
+Log as you go: `log .mise '<json>'` after every spawn, skip, finding, stop at the owner, feedback item and gate command; the script names each event's fields.
 
 ## start
 
@@ -11,11 +11,11 @@ Skip when: never.
 1. Write the owner's description verbatim to `.mise/goals.md`.
 2. Pick the branch from `git branch --show-current`: on `main` or `master`, `git switch -c feat/<slug>` for a feature or `fix/<slug>` for a bug fix, `<slug>` a kebab-case slug of the work; on any other branch that has no commits past the default branch and one of those two shapes, use it without asking; on any other branch otherwise, ask whether to use it or to branch from it.
 3. Classify the work as a bug fix or a feature, asking "Bug fix or new feature?" only where the description leaves it ambiguous. A bug fix's `goals.md` also records the repro steps, the expected behavior, and where its regression test goes.
-4. Commit, then `log {"event":"run","repo":…,"branch":…,"version":…}`.
+4. Commit, then log the `run` event.
 
 ## goals
 
-Skip when: never. Its parts skip on their own: the questions when no decision in this work is one only the owner can make, the mock when the config's Mock conditions do not match.
+Skip when: never.
 
 1. Read `goals.md` for contradictions, unstated assumptions, and scope the description leaves open. Each point that needs the owner's call becomes a question below; everything else becomes an edit to `goals.md`.
 2. A question remains → ask one round at a time, in SKILL.md's question format: the owner's calls, the edge cases and error behavior the spec would otherwise have to guess at, and what is out of scope.
@@ -25,7 +25,7 @@ Skip when: never. Its parts skip on their own: the questions when no decision in
 
 ## spec
 
-Skip when: the work fits one implementer's context — roughly one module, no schema or API change, no new concept. Judge that yourself.
+Skip when: the work fits one implementer's context — roughly one module, no schema or API change, no new concept.
 
 1. Read the code you need yourself.
 2. Write `.mise/spec.md`:
@@ -46,7 +46,7 @@ Skip when: the work fits one implementer's context — roughly one module, no sc
 
 Skip when: the spec step was skipped **and** the work touches nothing hard to undo.
 
-Spawn one `critic` per round over `spec.md`, and revise between rounds. Stop when a round returns no new blocking finding; hard cap 5 rounds. A round that returns a blocking finding is never the quiet round that stops the loop. Then `mark .mise critic done`, commit.
+Spawn one `critic` per round over `spec.md`, and revise between rounds. Stop when a round returns no new blocking finding; hard cap 5 rounds. Then `mark .mise critic done`, commit.
 
 ## execute
 
@@ -54,7 +54,7 @@ Skip when: never.
 
 Run the config's `Check` and `Unit tests` once before the first task; a failure there stops the run. No spec → write the run's one task file, `.mise/tasks/01_01_<slug>.md`, from `goals.md` in the spec step's task-file shape. Then, one task at a time, the file the report's `tasks.next_file` names:
 
-1. Spawn an `implementer` on the task file; a failure of either kind → stop and relay it.
+1. Spawn an `implementer` on the task file; a `Task failed:` report → stop and relay it.
 2. `git mv` the task file into `.mise/tasks/done/` and commit `mise: task <id> done`.
 
 After the last task, `reviewer` batches over the whole branch diff. Blocking findings → one fix round through an implementer (`Fix scope:` and `Defects:`), then re-review the fix commits alone. At most 2 fix rounds, then stop and surface what is left.
@@ -69,9 +69,9 @@ Spawn `adherence` subagents per family listed there, in batches over the branch 
 
 Skip when: never.
 
-Write `.mise/review.md`: one line per task — what changed and how to verify it, from the task files and `git log` — then the open assumptions from `goals.md` and `spec.md` and the amendments so far, at most 60 lines in all, which is one sitting's reading; past that, one line per area instead of per task. Print at most 5 lines — what to look at, and where — and stop. The run waits here. Feedback arrives in chat, or through the `delta:review-notes` skill's contract wherever that skill is installed and the owner says there are notes.
+Write `.mise/review.md`: one line per task — what changed and how to verify it, from the task files and `git log` — then the open assumptions from `goals.md` and `spec.md` and the amendments so far, at most 60 lines in all; past that, one line per area instead of per task. Print at most 5 lines — what to look at, and where — and stop. The run waits here. Feedback arrives in chat, or through the `delta:review-notes` skill's contract wherever that skill is installed and the owner says there are notes.
 
-Handle each item by what it changes, and `log {"event":"feedback","issue":…,"step":…,"kind":…}` for each — `issue` one line naming the defect or the changed decision, never the owner's wording:
+Handle each item by what it changes, and log a `feedback` event for each, its `issue` one line naming the defect or the changed decision, never the owner's wording:
 
 - **point** → batch it with the other point fixes; run `Unit tests` once per batch; commit.
 - **pattern** ("everywhere", "all instances") → list every instance first and show the count, then fix them.
@@ -92,7 +92,7 @@ A failure gets one repair through an implementer and one re-run of the gate. A s
 
 Skip when: never.
 
-`log {"event":"close","codeLines":…,"artifactLines":…}`, copy `.mise/ledger.jsonl` to `.claude/mise-ledger/<branch>.jsonl`, then delete `.mise/` and commit `mise: close`. Push the branch and open a pull request summarizing the work; that fails → report the branch and the action you tried.
+Log the `close` event, copy `.mise/ledger.jsonl` to `.claude/mise-ledger/<branch>.jsonl`, then delete `.mise/` and commit `mise: close`. Push the branch and open a pull request summarizing the work; that fails → report the branch and the action you tried.
 
 ## Amendments
 

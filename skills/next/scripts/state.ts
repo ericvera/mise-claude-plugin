@@ -20,6 +20,18 @@
 //   log <dir> <json>         appends one timestamped ledger event
 //   tally <dir>…             counts archived ledgers by event, step and detail,
 //                            with the runs and projects each row spans
+//
+// Ledger events — `log` takes exactly the fields listed, and no others, so the
+// rows the retro tallies compare across runs and projects:
+//   run       repo, branch, version — once, at start
+//   spawn     role, step, round, minutes, verdict — per subagent dispatched
+//   skip      step, reason — per skipped step
+//   finding   source, step, round, category, changed — per finding reported
+//   stop      step, reason, waitMinutes — per stop at the owner
+//   feedback  step, kind, issue — per review item; `issue` never verbatim
+//   gate      command, seconds, pass — per gate command run
+//   close     codeLines, artifactLines — once, at close
+//   amend     text — written by the `amend` command, never by `log`
 
 import {
   appendFileSync,
@@ -40,10 +52,20 @@ interface State {
 }
 
 const STEPS = "goals spec critic execute adherence review gate".split(" ")
-const EVENTS = "run spawn finding stop feedback skip amend gate close".split(
-  " ",
-)
 const FIELDS = "version started steps amendments".split(" ")
+
+// The ledger's schema, documented event by event in the header above.
+const EVENT_FIELDS: Record<string, string[] | undefined> = {
+  run: ["repo", "branch", "version"],
+  spawn: ["role", "step", "round", "minutes", "verdict"],
+  skip: ["step", "reason"],
+  finding: ["source", "step", "round", "category", "changed"],
+  stop: ["step", "reason", "waitMinutes"],
+  feedback: ["step", "kind", "issue"],
+  gate: ["command", "seconds", "pass"],
+  close: ["codeLines", "artifactLines"],
+  amend: ["text"],
+}
 
 const TASK_FILE = /^(\d{2}_\d{2})_.*\.md$/
 const TASK_REF = /(\d{2}_\d{2})_[^\s`]*\.md/g
@@ -331,11 +353,28 @@ function log(dir: string, rest: string[]): object {
   if (!isObject(data)) fail("log expects a JSON object")
 
   const event = data as Record<string, unknown>
+  const name = event.event
+  const fields = EVENT_FIELDS[name as string]
 
-  if (!EVENTS.includes(event.event as string))
-    fail(`unknown ledger event ${str(event.event)} (${EVENTS.join("|")})`)
+  if (!fields)
+    fail(
+      `unknown ledger event ${str(name)} (${Object.keys(EVENT_FIELDS).join("|")})`,
+    )
+
+  if (name === "amend") fail("an amend event is written by `state.ts amend`")
 
   if ("t" in event) fail("the ledger timestamp is set by the engine")
+
+  const given = Object.keys(event).filter((key) => key !== "event")
+  const missing = fields.filter((key) => !given.includes(key))
+  const unknown = given.filter((key) => !fields.includes(key))
+
+  if (missing.length || unknown.length)
+    fail(
+      `a ${name} event takes exactly ${fields.join(", ")}` +
+        (missing.length ? `; missing ${missing.join(", ")}` : "") +
+        (unknown.length ? `; unknown ${unknown.join(", ")}` : ""),
+    )
 
   return appendLedger(dir, event)
 }

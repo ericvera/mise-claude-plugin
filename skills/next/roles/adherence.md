@@ -8,7 +8,7 @@ Walk your batch **file by file**, in order — take it from `git diff --name-onl
 
 A vocabulary family: collect every term introduced in added comments, docs and identifiers, and flag each one that is neither in the glossary nor already used in the code outside this diff.
 
-Append to your family's section of `.mise/adherence.md` one row per flagged file, never a row for a file that passed — the log is the fix list, not the audit trail:
+Append to your family's section of `.mise/adherence.md` one row per flagged file, never a row for a file that passed:
 
 ```
 <file> | <family> | <n> flagged

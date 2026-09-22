@@ -68,4 +68,4 @@ Every set ends with the `Recommend:` line — pick one even when torn, and add a
 
 ## Stopping
 
-Stop only at: the goals approval, the review stage, a `blocked` subagent, a step that has spent its fix rounds, and a value only the owner holds. Never re-ask what `goals.md`, `spec.md` or the state already records; everywhere else, resolve the next step and run it in the same turn.
+Stop only at: the goals approval, the review stage, a subagent's `Task failed:`, execute's spent fix rounds, and a value only the owner holds. Never re-ask what `goals.md`, `spec.md` or the state already records; everywhere else, resolve the next step and run it in the same turn.

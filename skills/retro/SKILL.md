@@ -24,7 +24,7 @@ For each eligible issue, answer in order and stop at the first answer that settl
 4. Can an existing line be fixed or deleted instead of a new one added? Prefer that.
 5. Which ledger signal will show the change worked, and after how many runs is it checked and reverted if it did not? No signal → do not propose it.
 
-Every added line names the line it removes, and the mise repo's per-file line budgets (`docs/line-evidence.md`) hold. The default outcome is **log only**.
+Every added line names the line it removes, and the mise repo's per-file line budgets hold. The default outcome is **log only**.
 
 Output one table and nothing else, then ask which rows to apply:
 

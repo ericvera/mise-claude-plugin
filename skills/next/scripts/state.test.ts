@@ -406,17 +406,64 @@ test("log: appends timestamped events to ledger.jsonl", () => {
   const entry = ok(
     "log",
     dir,
-    JSON.stringify({ event: "run", branch: "fix-x" }),
+    JSON.stringify({
+      event: "run",
+      repo: "mise",
+      branch: "fix-x",
+      version: "3.0.0",
+    }),
   )
   assert.match(entry.t, ISO)
   assert.equal(entry.event, "run")
 
-  ok("log", dir, JSON.stringify({ event: "spawn", role: "critic", round: 1 }))
+  ok(
+    "log",
+    dir,
+    JSON.stringify({
+      event: "spawn",
+      role: "critic",
+      step: "critic",
+      round: 1,
+      minutes: 4,
+      verdict: "blocking",
+    }),
+  )
 
   const events = ledger(dir)
   assert.equal(events.length, 2)
   assert.equal(events[0].branch, "fix-x")
-  assert.deepEqual(Object.keys(events[1]), ["t", "event", "role", "round"])
+  assert.deepEqual(Object.keys(events[1]), [
+    "t",
+    "event",
+    "role",
+    "step",
+    "round",
+    "minutes",
+    "verdict",
+  ])
+})
+
+// The fields are what the retro tallies on, so a half-formed event is refused
+// rather than logged: the message names the ones the event takes.
+test("log: an event takes exactly the fields it declares", () => {
+  const dir = started()
+  const skip = { event: "skip", step: "critic", reason: "no spec" }
+
+  ok("log", dir, JSON.stringify(skip))
+
+  assert.match(
+    fails("log", dir, JSON.stringify({ event: "skip", step: "critic" })).error,
+    /takes exactly step, reason; missing reason/,
+  )
+  assert.match(
+    fails("log", dir, JSON.stringify({ ...skip, severity: "high" })).error,
+    /unknown severity/,
+  )
+  assert.match(
+    fails("log", dir, JSON.stringify({ event: "amend", text: "x" })).error,
+    /written by `state.ts amend`/,
+  )
+  assert.equal(ledger(dir).length, 1)
 })
 
 test("log: rejects unknown events and malformed input", () => {
@@ -430,7 +477,11 @@ test("log: rejects unknown events and malformed input", () => {
   fails("log", dir, JSON.stringify(["run"]))
   fails("log", dir, "{not json")
   fails("log", dir)
-  fails("log", "/nonexistent/.mise", JSON.stringify({ event: "run" }))
+  fails(
+    "log",
+    "/nonexistent/.mise",
+    JSON.stringify({ event: "run", repo: "r", branch: "b", version: "3.0.0" }),
+  )
   assert.deepEqual(ledger(dir), [])
 })
 
