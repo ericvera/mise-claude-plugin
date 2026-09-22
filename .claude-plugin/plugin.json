@@ -1,8 +1,8 @@
 {
   "name": "mise",
   "displayName": "mise",
-  "description": "Structured feature-development workflow for Claude Code: goals (+ optional mock) gated by you, then requirements \u2192 implementation plan \u2192 execution running autonomously with fresh-context critic and reviewer agents, your project's review checklist answered by every implementer and verified by the reviewer, an optional documenter pass writing every comment and doc per task, a test-driven bugfix route, and resumable state.",
-  "version": "2.1.0",
+  "description": "One self-sizing workflow for Claude Code: goals gated by you when a decision needs you, a spec and critic only when the work needs them, fresh-context Opus implementers and reviewers per task, an adherence pass against your own past review notes, an open review stage that absorbs late decisions as amendments instead of resets, and a per-run ledger a retro reads under a change protocol.",
+  "version": "3.0.0",
   "author": {
     "name": "Eric Vera"
   },
@@ -12,10 +12,10 @@
   "keywords": [
     "workflow",
     "feature-development",
-    "requirements",
-    "planning",
+    "bugfix",
     "spec-driven",
     "autonomous",
-    "tdd"
+    "adherence",
+    "ledger"
   ]
 }
