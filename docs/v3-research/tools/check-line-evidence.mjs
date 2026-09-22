@@ -21,7 +21,6 @@ const budgets = {
   "skills/next/roles/critic.md": 15,
   "skills/next/roles/adherence.md": 15,
   "skills/next/roles/sweep.md": 10,
-  "skills/next/roles/explore.md": 8,
   "skills/next/references/config-reference.md": 35,
   "skills/retro/SKILL.md": 30,
 }
@@ -89,7 +88,7 @@ for (const line of readFileSync(join(repo, "docs/line-evidence.md"), "utf8").spl
     const ok =
       (evidenceIds.has(id) && /^E-\d{3}$/.test(id)) ||
       (/^O-\d{2}$/.test(id) && +id.slice(2) >= 1 && +id.slice(2) <= 15) ||
-      (/^D-\d{2}$/.test(id) && +id.slice(2) >= 1 && +id.slice(2) <= 13)
+      (/^D-\d{2}$/.test(id) && +id.slice(2) >= 1 && +id.slice(2) <= 26)
     if (!ok) errors.push(`${file}: "${key}" unknown id ${id}`)
   }
   const normal = normalize(key)
@@ -131,7 +130,7 @@ for (const [file, budget] of Object.entries(budgets)) {
 }
 
 console.log(
-  `${"total".padEnd(43)} ${String(total).padStart(5)}  ${String(318).padStart(6)}`,
+  `${"total".padEnd(43)} ${String(total).padStart(5)}  ${String(310).padStart(6)}`,
 )
 
 if (errors.length) {

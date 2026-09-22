@@ -35,3 +35,16 @@ All twelve review-page recommendations accepted, plus: the owner drafts nothing 
 | 11  | Change protocol applies to mise, project rule files and this repo.                                                                                    |
 | 12  | Adherence pass: lint, then a fresh-context agent per rule family over the diff file by file with a per-file log, then a glossary check for new terms. |
 | 13  | Every run stops once before implementation: a ≤3-line issue/approach statement, approved explicitly (supersedes the no-stop small path).              |
+| 14  | The mise directory is always `.mise/`: no config value, no placeholder, no setup question.                                                            |
+| 15  | Run ledgers are always archived to `.claude/mise-ledger/`: no config value.                                                                           |
+| 16  | Branches are always `feat/<slug>` for features and `fix/<slug>` for bug fixes: no config value, no setup question.                                    |
+| 17  | Ship defaults to `pr`; the config line is written only for `merge (<style>)` or `off`.                                                                |
+| 18  | No Task tests slot: the implementer runs `Unit tests`, scoped to its files where the runner takes a path.                                             |
+| 19  | No Build slot: a project that needs a build lists it under `Check`, which the gate runs.                                                              |
+| 20  | No Mock guidance: the mock is built from the repo's own code and `CLAUDE.md`.                                                                         |
+| 21  | No Review notes config: the review step reads the branch's Delta Review notes through the `delta:review-notes` skill where it is installed.           |
+| 22  | No Backlog config: `/mise:next` with no description and nothing in flight asks what to work on.                                                       |
+| 23  | Setup infers Format, Check and Unit tests from the repo and asks two questions: confirm them, and how to ship.                                        |
+| 24  | No `explore` role: the driver reads the code itself in the spec step.                                                                                 |
+| 25  | `mark <step> skipped` takes no reason; the state file stores the value and the ledger's `skip` event carries the reason.                              |
+| 26  | The ledger's `feedback` event stores `issue` — one line naming the defect or changed decision — not the owner's words verbatim.                       |
