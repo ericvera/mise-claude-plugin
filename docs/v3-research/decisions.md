@@ -34,3 +34,4 @@ All twelve review-page recommendations accepted, plus: the owner drafts nothing 
 | 10  | Review is a stage, open until the owner closes it; the full gate runs once afterwards.                                                                |
 | 11  | Change protocol applies to mise, project rule files and this repo.                                                                                    |
 | 12  | Adherence pass: lint, then a fresh-context agent per rule family over the diff file by file with a per-file log, then a glossary check for new terms. |
+| 13  | Every run stops once before implementation: a ≤3-line issue/approach statement, approved explicitly (supersedes the no-stop small path).              |

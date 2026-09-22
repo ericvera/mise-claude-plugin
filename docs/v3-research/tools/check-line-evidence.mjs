@@ -89,7 +89,7 @@ for (const line of readFileSync(join(repo, "docs/line-evidence.md"), "utf8").spl
     const ok =
       (evidenceIds.has(id) && /^E-\d{3}$/.test(id)) ||
       (/^O-\d{2}$/.test(id) && +id.slice(2) >= 1 && +id.slice(2) <= 15) ||
-      (/^D-\d{2}$/.test(id) && +id.slice(2) >= 1 && +id.slice(2) <= 12)
+      (/^D-\d{2}$/.test(id) && +id.slice(2) >= 1 && +id.slice(2) <= 13)
     if (!ok) errors.push(`${file}: "${key}" unknown id ${id}`)
   }
   const normal = normalize(key)
