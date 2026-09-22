@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 // State engine for the `next` workflow skill (mise v3).
 //
-// Single reader/writer of `.mise/.workflow-state` and the only appender of
-// `.mise/ledger.jsonl`. Node >= 24 runs it directly: `node state.ts <cmd>`.
+// Single reader/writer of `.mise/.workflow-state`. Node >= 24 runs it
+// directly: `node state.ts <cmd>`.
 // No hashes, no cascade: a broken or hand-edited state file is an error, never
 // rebuilt by inference.
 //
@@ -14,23 +14,9 @@
 //   report <dir> [--write]   in_flight, next_action, tasks, amendments;
 //                            --write initializes a fresh state file
 //   mark <dir> <step> done|skipped
-//   amend <dir> "<text>"     +1 amendment, reopens execute and adherence, logs it
-//   log <dir> <json>         appends one ledger event: EVENT_FIELDS below
-//   tally <dir>…             counts archived ledgers (searched recursively) by
-//                            event, step and detail, with the runs, projects,
-//                            average seconds and example free text of each row
-//
-// The engine stamps every event with `t` and with `seconds` since the event
-// before it, so no duration is ever model-reported: a spawn's seconds is its
-// run time, a stop's is the owner's wait.
+//   amend <dir>              +1 amendment, reopens execute and adherence
 
-import {
-  appendFileSync,
-  existsSync,
-  readFileSync,
-  readdirSync,
-  writeFileSync,
-} from "node:fs"
+import { existsSync, readFileSync, readdirSync, writeFileSync } from "node:fs"
 import { join } from "node:path"
 
 type StepState = "done" | "skipped" | null
@@ -44,50 +30,6 @@ interface State {
 
 const STEPS = "goals spec critic execute adherence review gate".split(" ")
 const FIELDS = "version started steps amendments".split(" ")
-
-// The ledger's schema: `log` takes exactly these fields, and no others, so the
-// rows the retro tallies compare across runs and projects.
-const EVENT_FIELDS: Record<string, string[] | undefined> = {
-  run: ["repo", "branch", "version"],
-  spawn: ["role", "step", "round", "verdict"],
-  skip: ["step", "reason"],
-  finding: ["source", "step", "round", "category", "changed"],
-  stop: ["step", "reason"],
-  feedback: ["step", "kind", "issue"],
-  gate: ["command", "pass"],
-  close: ["codeLines", "artifactLines"],
-  amend: ["text"],
-}
-
-const ROLES = ["implementer", "reviewer", "critic", "adherence"]
-
-type Check = [expected: string, test: (value: unknown) => boolean]
-
-const oneOf = (values: string[]): Check => [
-  values.join("|"),
-  (v) => values.includes(v as string),
-]
-
-const atLeast = (min: 0 | 1): Check => [
-  min ? "a positive integer" : "a non-negative integer",
-  (v) => Number.isInteger(v) && (v as number) >= min,
-]
-
-const BOOLEAN: Check = ["true|false", (v) => typeof v === "boolean"]
-
-// A field's allowed values: a typo or a variant spelling would split the retro's
-// tally rows, so `log` refuses it. Fields not listed take any non-empty string.
-const FIELD_CHECKS: Record<string, Check> = {
-  step: oneOf(["start", ...STEPS, "close"]),
-  role: oneOf(ROLES),
-  source: oneOf(ROLES),
-  kind: oneOf(["point", "pattern", "decision", "voided"]),
-  round: atLeast(1),
-  changed: BOOLEAN,
-  pass: BOOLEAN,
-  codeLines: atLeast(0),
-  artifactLines: atLeast(0),
-}
 
 const TASK_FILE = /^(\d{2}_\d{2})_.*\.md$/
 const TASK_REF = /(\d{2}_\d{2})_[^\s`]*\.md/g
@@ -206,38 +148,6 @@ function writeState(dir: string, state: State): void {
   writeFileSync(path, JSON.stringify(state, null, 2) + "\n")
 }
 
-function appendLedger(dir: string, event: Record<string, unknown>): object {
-  const now = new Date()
-  const previous = lastLedgerTime(join(dir, "ledger.jsonl"))
-  const entry = {
-    t: now.toISOString(),
-    ...event,
-    ...(previous === null
-      ? {}
-      : {
-          seconds: Math.max(0, Math.round((now.getTime() - previous) / 1000)),
-        }),
-  }
-  appendFileSync(join(dir, "ledger.jsonl"), JSON.stringify(entry) + "\n")
-
-  return entry
-}
-
-// The time of the ledger's last event, or null when there is none to time from.
-function lastLedgerTime(path: string): number | null {
-  if (!existsSync(path)) return null
-
-  const last = readFileSync(path, "utf8").trimEnd().split("\n").at(-1)
-
-  try {
-    const time = Date.parse(JSON.parse(last ?? "").t)
-
-    return Number.isNaN(time) ? null : time
-  } catch {
-    return null
-  }
-}
-
 // IDs are the leading NN_MM of the task filenames listed under `## Task index`
 // in spec.md, in order of first appearance. With no spec there is no index: the
 // task files are, starting at one implicit task an amendment can add to.
@@ -350,8 +260,6 @@ function report(dir: string, rest: string[]): object {
   }
 }
 
-// A skip's reason is ledger material — the driver logs the `skip` event with it
-// — so the state keeps the value alone and nothing here reads a reason back.
 function mark(dir: string, rest: string[]): object {
   const [step, value] = rest
 
@@ -364,8 +272,7 @@ function mark(dir: string, rest: string[]): object {
   if (step === "execute" && value === "skipped")
     fail("execute is never skipped")
 
-  if (rest.length > 2)
-    fail(`mark takes no reason — log a skip event with it instead`)
+  if (rest.length > 2) fail("usage: state.ts mark .mise <step> done|skipped")
 
   const { state } = loadState(dir)
 
@@ -385,11 +292,7 @@ function mark(dir: string, rest: string[]): object {
 // An amendment changes a recorded decision: nothing is re-approved or
 // re-critiqued, but its tasks run through execute and its review, and the
 // driver re-answers the adherence skip condition, so both steps reopen.
-function amend(dir: string, rest: string[]): object {
-  const text = rest.join(" ").trim()
-
-  if (!text) fail('usage: state.ts amend .mise "<text>"')
-
+function amend(dir: string): object {
   const { state } = loadState(dir)
   const reopened = ["execute", "adherence"]
 
@@ -398,181 +301,8 @@ function amend(dir: string, rest: string[]): object {
   for (const step of reopened) state.steps[step] = null
 
   writeState(dir, state)
-  appendLedger(dir, { event: "amend", text })
 
   return { amendments: state.amendments, reopened }
-}
-
-function log(dir: string, rest: string[]): object {
-  if (!existsSync(dir)) fail(`mise directory not found: ${dir}`)
-
-  let data: unknown
-
-  try {
-    data = JSON.parse(rest[0] ?? "")
-  } catch {
-    fail(`log expects one JSON object, got ${str(rest[0] ?? "")}`)
-  }
-
-  if (!isObject(data)) fail("log expects a JSON object")
-
-  const event = data as Record<string, unknown>
-  const name = event.event
-  const fields = EVENT_FIELDS[name as string]
-
-  if (!fields)
-    fail(
-      `unknown ledger event ${str(name)} (${Object.keys(EVENT_FIELDS).join("|")})`,
-    )
-
-  if (name === "amend") fail("an amend event is written by `state.ts amend`")
-
-  if ("t" in event || "seconds" in event)
-    fail("the ledger timestamp and seconds are set by the engine")
-
-  const given = Object.keys(event).filter((key) => key !== "event")
-  const missing = fields.filter((key) => !given.includes(key))
-  const unknown = given.filter((key) => !fields.includes(key))
-
-  if (missing.length || unknown.length)
-    fail(
-      `a ${name} event takes exactly ${fields.join(", ")}` +
-        (missing.length ? `; missing ${missing.join(", ")}` : "") +
-        (unknown.length ? `; unknown ${unknown.join(", ")}` : ""),
-    )
-
-  for (const key of fields) {
-    const check = FIELD_CHECKS[key]
-    const value = event[key]
-
-    if (check ? !check[1](value) : typeof value !== "string" || !value.trim())
-      fail(
-        `${name} ${key} must be ${check ? check[0] : "a non-empty string"}, got ${str(value)}`,
-      )
-  }
-
-  return appendLedger(dir, event)
-}
-
-// Fifty accumulated ledgers run to tens of thousands of lines, so the retro
-// never opens one: it reads these counts. Rows group on the fields that repeat
-// across runs; free text (reason, text, issue) is left out, since one row
-// per distinct wording would be the ledger again rather than an aggregate; each
-// row instead carries a few examples of it, enough to name what went wrong.
-const FREE_TEXT = ["issue", "reason", "text"]
-const EXAMPLES = 3
-const DETAIL = "role source category changed kind verdict command pass".split(
-  " ",
-)
-
-interface Row {
-  event: string
-  step: string | null
-  detail: string
-  count: number
-  runs: Set<string>
-  projects: Set<string>
-  seconds: number[]
-  examples: Set<string>
-}
-
-function tally(dir: string, rest: string[]): object {
-  const dirs = [dir, ...rest]
-  const rows = new Map<string, Row>()
-  const projects = new Set<string>()
-  let ledgers = 0
-  let events = 0
-  let unreadable = 0
-
-  for (const d of dirs) {
-    if (!existsSync(d)) fail(`ledger directory not found: ${d}`)
-
-    // Ledgers archive under their branch name, so `feat/x.jsonl` sits in a
-    // subdirectory.
-    const names = readdirSync(d, { recursive: true, encoding: "utf8" })
-
-    for (const name of names.filter((f) => f.endsWith(".jsonl")).sort()) {
-      ledgers += 1
-      projects.add(d)
-
-      for (const line of readFileSync(join(d, name), "utf8").split("\n")) {
-        if (!line.trim()) continue
-
-        let entry: Record<string, unknown>
-
-        try {
-          entry = JSON.parse(line)
-        } catch {
-          unreadable += 1
-          continue
-        }
-
-        if (!isObject(entry) || typeof entry.event !== "string") {
-          unreadable += 1
-          continue
-        }
-
-        events += 1
-
-        const step = typeof entry.step === "string" ? entry.step : null
-        const detail = DETAIL.filter((k) => entry[k] !== undefined)
-          .map((k) => `${k}=${String(entry[k]).slice(0, 24)}`)
-          .join(" ")
-        const key = [entry.event, step, detail].join("\u0000")
-        const row = rows.get(key) ?? {
-          event: entry.event,
-          step,
-          detail,
-          count: 0,
-          runs: new Set<string>(),
-          projects: new Set<string>(),
-          seconds: [],
-          examples: new Set<string>(),
-        }
-
-        row.count += 1
-
-        if (typeof entry.seconds === "number") row.seconds.push(entry.seconds)
-
-        for (const k of FREE_TEXT)
-          if (typeof entry[k] === "string" && row.examples.size < EXAMPLES)
-            row.examples.add(entry[k].slice(0, 100))
-
-        row.runs.add(join(d, name))
-        row.projects.add(d)
-        rows.set(key, row)
-      }
-    }
-  }
-
-  const sorted = [...rows.values()].sort(
-    (a, b) => b.count - a.count || a.event.localeCompare(b.event),
-  )
-
-  return {
-    ledgers,
-    projects: projects.size,
-    events,
-    ...(unreadable ? { unreadable } : {}),
-    rows_total: sorted.length,
-    // 50 rows is already more issues than one retro table can act on.
-    rows: sorted.slice(0, 50).map((row) => ({
-      event: row.event,
-      step: row.step,
-      detail: row.detail,
-      count: row.count,
-      runs: row.runs.size,
-      projects: row.projects.size,
-      ...(row.seconds.length
-        ? {
-            avg_seconds: Math.round(
-              row.seconds.reduce((a, b) => a + b, 0) / row.seconds.length,
-            ),
-          }
-        : {}),
-      ...(row.examples.size ? { examples: [...row.examples] } : {}),
-    })),
-  }
 }
 
 type Command = (dir: string, rest: string[]) => object
@@ -581,14 +311,11 @@ const COMMANDS: Record<string, Command | undefined> = {
   report,
   mark,
   amend,
-  log,
-  tally,
 }
 
 const [cmd, dir, ...rest] = process.argv.slice(2)
 const command = COMMANDS[cmd ?? ""]
 
-if (!command || !dir)
-  fail("usage: state.ts <report|mark|amend|log|tally> <dir> [args]")
+if (!command || !dir) fail("usage: state.ts <report|mark|amend> <dir> [args]")
 
 console.log(JSON.stringify(command(dir, rest), null, 2))

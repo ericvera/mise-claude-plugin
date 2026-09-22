@@ -16,7 +16,7 @@ You are the **driver**: read the state, run the step it names, and spawn every u
 ## Arguments
 
 - Empty → continue the work in flight, or start new work.
-- `setup` → run `${CLAUDE_SKILL_DIR}/stages/setup.md`, then stop.
+- `setup` → run `${CLAUDE_SKILL_DIR}/setup.md`, then stop.
 - Anything else → a work description.
 
 ## Load
@@ -31,7 +31,7 @@ node ${CLAUDE_SKILL_DIR}/scripts/state.ts report .mise
 
 - Needs Node 24+; a missing or older `node`, or an `{error}`, → relay it and stop.
 - Re-run it after every `mark`, `amend` and finished task, and act on the new `next_action` in the same turn.
-- Never read, write or repair `.mise/.workflow-state` or `.mise/ledger.jsonl` by hand.
+- Never read, write or repair `.mise/.workflow-state` by hand.
 - Commit `.mise` whenever a step is marked — subject `mise: <what happened>` — so any checkout of the branch resumes the run.
 - Delete `.mise` only in the close step.
 

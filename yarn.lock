@@ -14,6 +14,16 @@ __metadata:
   languageName: node
   linkType: hard
 
+"mise@workspace:.":
+  version: 0.0.0-use.local
+  resolution: "mise@workspace:."
+  dependencies:
+    "@types/node": "npm:^24.13.3"
+    prettier: "npm:^3.9.6"
+    typescript: "npm:^5.9.3"
+  languageName: unknown
+  linkType: soft
+
 "prettier@npm:^3.9.6":
   version: 3.9.6
   resolution: "prettier@npm:3.9.6"
@@ -49,13 +59,3 @@ __metadata:
   checksum: 10c0/85a79189113a238959d7a647368e4f7c5559c3a404ebdb8fc4488145ce9426fcd82252a844a302798dfc0e37e6fb178ff481ed03bc4caf634c5757d9ef43521d
   languageName: node
   linkType: hard
-
-"workflow-skills@workspace:.":
-  version: 0.0.0-use.local
-  resolution: "workflow-skills@workspace:."
-  dependencies:
-    "@types/node": "npm:^24.13.3"
-    prettier: "npm:^3.9.6"
-    typescript: "npm:^5.9.3"
-  languageName: unknown
-  linkType: soft

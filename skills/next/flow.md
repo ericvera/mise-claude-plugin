@@ -2,8 +2,6 @@
 
 Nine steps, in order. Answer every **Skip when** line at the start of the run; a yes → `mark .mise <step> skipped` before that step's turn comes.
 
-Log as you go: `log .mise '<json>'` after every spawn, skip, finding, stop at the owner once they answer, feedback item and gate command; the script names each event's fields.
-
 ## start
 
 Skip when: never.
@@ -11,7 +9,7 @@ Skip when: never.
 1. Write the owner's description verbatim to `.mise/goals.md`.
 2. Pick the branch from `git branch --show-current`: on `main` or `master`, `git switch -c feat/<slug>` for a feature or `fix/<slug>` for a bug fix, `<slug>` a kebab-case slug of the work; on any other branch that has no commits past the default branch and one of those two shapes, use it without asking; on any other branch otherwise, ask whether to use it or to branch from it.
 3. Classify the work as a bug fix or a feature, asking "Bug fix or new feature?" only where the description leaves it ambiguous. A bug fix's `goals.md` also records the repro steps, the expected behavior, and where its regression test goes.
-4. Commit, then log the `run` event.
+4. Commit.
 
 ## goals
 
@@ -71,7 +69,7 @@ Skip when: never.
 
 Write `.mise/review.md`: one line per task — what changed and how to verify it, from the task files and `git log` — then the open assumptions from `goals.md` and `spec.md` and the amendments so far, at most 60 lines in all; past that, one line per area instead of per task. Print at most 5 lines — what to look at, and where — and stop. The run waits here. Feedback arrives in chat, or through the `delta:review-notes` skill's contract wherever that skill is installed and the owner says there are notes.
 
-Handle each item by what it changes, and log a `feedback` event for each, its `issue` one line naming the defect or the changed decision, never the owner's wording:
+Handle each item by what it changes:
 
 - **point** → batch it with the other point fixes and send each batch to one implementer (`Fix scope:` and `Defects:`).
 - **pattern** ("everywhere", "all instances") → list every instance first and show the count, then send them to one implementer as a batch.
@@ -92,7 +90,7 @@ A failure gets one repair through an implementer and one re-run of the gate. A s
 
 Skip when: never.
 
-Log the `close` event, copy `.mise/ledger.jsonl` to `.claude/mise-ledger/<branch>.jsonl`, then delete `.mise/` and commit `mise: close`. Push the branch and open a pull request summarizing the work; that fails → report the branch and the action you tried.
+Delete `.mise/` and commit `mise: close`. Push the branch and open a pull request summarizing the work; that fails → report the branch and the action you tried.
 
 ## Amendments
 
@@ -102,6 +100,6 @@ An owner statement that changes a decision already recorded in `goals.md` or `sp
 - <date> <what changed> — <why> — tasks: <new or affected ids>
 ```
 
-Then `amend .mise "<what changed>"` and re-answer the skip conditions it reopens. Only the affected work becomes new tasks — their task files written, and listed in the spec's `## Task index` where there is a spec — while finished tasks stay finished, and nothing is re-approved or sent back to the critic.
+Then `amend .mise` and re-answer the skip conditions it reopens. Only the affected work becomes new tasks — their task files written, and listed in the spec's `## Task index` where there is a spec — while finished tasks stay finished, and nothing is re-approved or sent back to the critic.
 
 Read `## Amendments` only when re-answering skip conditions and when writing `review.md`; elsewhere the report's `amendments` count is what you need.

@@ -4,8 +4,6 @@ A Claude Code plugin that drives a piece of work — a bug fix, a feature — fr
 
 The name comes from _mise en place_ — prep everything before the pan gets hot.
 
-v3 keeps only what two months of measured runs showed earning its cost, and every instruction cites the run evidence behind it ([docs/line-evidence.md](docs/line-evidence.md)). Gone from 2.x: the documenter pass, the acceptance subagent, the per-run retrospective, the review checklist, resets when an early document changes, the sweep pass, the progress log, the requirements file, and per-task reviews.
-
 ## Install
 
 ```
@@ -26,18 +24,17 @@ Requires Node.js 24+ on your PATH — the state engine is TypeScript that Node [
 
 ## Usage
 
-| Command                       | What it does                                                             |
-| ----------------------------- | ------------------------------------------------------------------------ |
-| `/mise:next`                  | Continue the work in flight, or ask what to work on                      |
-| `/mise:next some description` | Start a bug fix or feature from that description                         |
-| `/mise:next setup`            | (Re)run project configuration                                            |
-| `/mise:retro`                 | Tally the run ledgers and propose instruction changes for you to approve |
+| Command                       | What it does                                        |
+| ----------------------------- | --------------------------------------------------- |
+| `/mise:next`                  | Continue the work in flight, or ask what to work on |
+| `/mise:next some description` | Start a bug fix or feature from that description    |
+| `/mise:next setup`            | (Re)run project configuration                       |
 
 ## Configuration
 
-Setup writes `.claude/mise-config.md`. Required: `## Quality commands` — Check and Unit tests, inferred from your package manifest for you to confirm. Optional: `## Mock conditions`, `## Skills & guides`, `## Adherence`. [config-reference.md](skills/next/references/config-reference.md) defines each section.
+Setup writes `.claude/mise-config.md`. Required: `## Quality commands` — Check and Unit tests, inferred from your package manifest for you to confirm. Optional: `## Mock conditions`, `## Skills & guides`, `## Adherence`. [setup.md](skills/next/setup.md) defines each section.
 
-Nothing else is configurable: work in flight lives in `.mise/` on its branch, committed as it goes so any checkout resumes it; branches are `feat/<slug>` or `fix/<slug>`; run ledgers archive to `.claude/mise-ledger/`.
+Nothing else is configurable: work in flight lives in `.mise/` on its branch, committed as it goes so any checkout resumes it; branches are `feat/<slug>` or `fix/<slug>`.
 
 ## How it works
 
@@ -65,7 +62,7 @@ Load the plugin straight from a checkout:
 claude --plugin-dir /path/to/mise-claude-plugin
 ```
 
-Follow [docs/skill-authoring.md](docs/skill-authoring.md) when editing instruction files. The state engine's tests run with `yarn test`; `yarn typecheck` must pass. The research behind v3 is under the `v3-research` branch (https://github.com/ericvera/mise-claude-plugin/tree/v3-research/docs/v3-research).
+Rules for editing the skill files are in [CLAUDE.md](CLAUDE.md). The state engine's tests run with `yarn test`; `yarn typecheck` must pass.
 
 ## Credits
 

@@ -9,7 +9,7 @@
       "name": "mise",
       "source": "./",
       "displayName": "mise",
-      "description": "One self-sizing workflow for Claude Code: goals you approve before any code, fresh-context Opus subagents that implement and review, a review stage that absorbs late decisions as amendments, and a run ledger.",
+      "description": "One self-sizing workflow for Claude Code: goals you approve before any code, fresh-context Opus subagents that implement and review, and a review stage that absorbs late decisions as amendments.",
       "category": "workflow",
       "keywords": [
         "workflow",
@@ -17,8 +17,7 @@
         "bugfix",
         "spec-driven",
         "autonomous",
-        "adherence",
-        "ledger"
+        "adherence"
       ]
     }
   ]

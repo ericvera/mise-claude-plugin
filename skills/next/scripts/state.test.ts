@@ -84,19 +84,6 @@ function state(dir: string): any {
   return JSON.parse(readFileSync(join(dir, ".workflow-state"), "utf8"))
 }
 
-function ledger(dir: string): any[] {
-  const path = join(dir, "ledger.jsonl")
-
-  if (!existsSync(path)) {
-    return []
-  }
-
-  return readFileSync(path, "utf8")
-    .split("\n")
-    .filter(Boolean)
-    .map((line) => JSON.parse(line))
-}
-
 // Move a task file into tasks/done/, as the execute step does.
 function markDone(dir: string, filename: string): void {
   const done = join(dir, "tasks", "done")
@@ -272,7 +259,7 @@ test("report: with no spec, an added task file reopens execute", () => {
   assert.equal(ok("report", dir).next_action, "step:review")
 
   // An amendment in a run with no spec: its new task file is the index.
-  ok("amend", dir, "owner changed the empty-state copy")
+  ok("amend", dir)
   place(dir, { "tasks/01_02_copy.md": "# task" })
 
   const report = ok("report", dir)
@@ -318,16 +305,12 @@ test("mark: done and skipped are recorded in the state", () => {
   assert.equal(written.steps.spec, "skipped")
 })
 
-// The reason for a skip is the ledger's, logged by the driver: mark neither
-// stores it nor writes the event, and a reason passed here is a mistake.
-test("mark: a skip carries no reason and writes no ledger event", () => {
+test("mark: a skip takes no reason", () => {
   const dir = started()
-  ok("mark", dir, "critic", "skipped")
 
-  assert.deepEqual(ledger(dir), [])
   assert.match(
     fails("mark", dir, "adherence", "skipped", "no families").error,
-    /takes no reason/,
+    /usage/,
   )
   assert.equal(state(dir).steps.adherence, null)
 })
@@ -372,7 +355,7 @@ test("amend: reopens execute and adherence and counts up", () => {
   ok("mark", dir, "review", "done")
   assert.equal(ok("report", dir).next_action, "step:gate")
 
-  const result = ok("amend", dir, "drop the cache layer")
+  const result = ok("amend", dir)
   assert.equal(result.amendments, 1)
   assert.deepEqual(result.reopened, ["execute", "adherence"])
 
@@ -385,341 +368,7 @@ test("amend: reopens execute and adherence and counts up", () => {
   assert.equal(written.steps.adherence, null)
   assert.equal(written.steps.review, "done") // review is not reopened
 
-  assert.equal(ok("amend", dir, "and the retry").amendments, 2)
-})
-
-test("amend: appends the text to the ledger", () => {
-  const dir = started()
-  ok("amend", dir, "owner wants soft delete instead")
-
-  const events = ledger(dir)
-  assert.equal(events.length, 1)
-  assert.match(events[0].t, ISO)
-  assert.deepEqual(
-    { event: events[0].event, text: events[0].text },
-    { event: "amend", text: "owner wants soft delete instead" },
-  )
-})
-
-test("amend: empty text is rejected", () => {
-  const dir = started()
-
-  fails("amend", dir)
-  fails("amend", dir, "   ")
-  assert.equal(state(dir).amendments, 0)
-  assert.deepEqual(ledger(dir), [])
-})
-
-// --- log ----------------------------------------------------------------------
-
-test("log: appends timestamped events to ledger.jsonl", () => {
-  const dir = started()
-
-  const entry = ok(
-    "log",
-    dir,
-    JSON.stringify({
-      event: "run",
-      repo: "mise",
-      branch: "fix-x",
-      version: "3.0.0",
-    }),
-  )
-  assert.match(entry.t, ISO)
-  assert.equal(entry.event, "run")
-
-  ok(
-    "log",
-    dir,
-    JSON.stringify({
-      event: "spawn",
-      role: "critic",
-      step: "critic",
-      round: 1,
-      verdict: "blocking",
-    }),
-  )
-
-  const events = ledger(dir)
-  assert.equal(events.length, 2)
-  assert.equal(events[0].branch, "fix-x")
-  assert.equal("seconds" in events[0], false)
-  assert.deepEqual(Object.keys(events[1]), [
-    "t",
-    "event",
-    "role",
-    "step",
-    "round",
-    "verdict",
-    "seconds",
-  ])
-})
-
-// Durations are never model-reported: each event is timed from the one before.
-test("log: the engine times each event from the one before", () => {
-  const dir = started()
-  const earlier = new Date(Date.now() - 90_000).toISOString()
-
-  writeFileSync(
-    join(dir, "ledger.jsonl"),
-    JSON.stringify({ t: earlier, event: "run" }) + "\n",
-  )
-  ok(
-    "log",
-    dir,
-    JSON.stringify({ event: "stop", step: "goals", reason: "approval" }),
-  )
-
-  const seconds = ledger(dir)[1].seconds
-  assert.ok(seconds >= 90 && seconds < 100, `seconds ${seconds}`)
-  assert.match(
-    fails(
-      "log",
-      dir,
-      JSON.stringify({
-        event: "gate",
-        command: "yarn test",
-        pass: true,
-        seconds: 3,
-      }),
-    ).error,
-    /seconds are set by the engine/,
-  )
-})
-
-// A variant spelling would split the retro's tally rows, so it is refused.
-test("log: field values are checked", () => {
-  const dir = started()
-  const spawn = {
-    event: "spawn",
-    role: "reviewer",
-    step: "execute",
-    round: 1,
-    verdict: "none",
-  }
-
-  ok("log", dir, JSON.stringify(spawn))
-
-  for (const [bad, message] of [
-    [{ step: "Execute" }, /spawn step must be start\|goals/],
-    [{ role: "Reviewer" }, /spawn role must be implementer\|reviewer/],
-    [{ round: 0 }, /round must be a positive integer/],
-    [{ round: "1" }, /round must be a positive integer/],
-    [{ verdict: "" }, /verdict must be a non-empty string/],
-  ] as const)
-    assert.match(
-      fails("log", dir, JSON.stringify({ ...spawn, ...bad })).error,
-      message,
-    )
-
-  assert.match(
-    fails(
-      "log",
-      dir,
-      JSON.stringify({ event: "gate", command: "yarn test", pass: "true" }),
-    ).error,
-    /gate pass must be true\|false/,
-  )
-  assert.match(
-    fails(
-      "log",
-      dir,
-      JSON.stringify({
-        event: "feedback",
-        step: "review",
-        kind: "nit",
-        issue: "x",
-      }),
-    ).error,
-    /kind must be point\|pattern\|decision\|voided/,
-  )
-  assert.equal(ledger(dir).length, 1)
-})
-
-// The fields are what the retro tallies on, so a half-formed event is refused
-// rather than logged: the message names the ones the event takes.
-test("log: an event takes exactly the fields it declares", () => {
-  const dir = started()
-  const skip = { event: "skip", step: "critic", reason: "no spec" }
-
-  ok("log", dir, JSON.stringify(skip))
-
-  assert.match(
-    fails("log", dir, JSON.stringify({ event: "skip", step: "critic" })).error,
-    /takes exactly step, reason; missing reason/,
-  )
-  assert.match(
-    fails("log", dir, JSON.stringify({ ...skip, severity: "high" })).error,
-    /unknown severity/,
-  )
-  assert.match(
-    fails("log", dir, JSON.stringify({ event: "amend", text: "x" })).error,
-    /written by `state.ts amend`/,
-  )
-  assert.equal(ledger(dir).length, 1)
-})
-
-test("log: rejects unknown events and malformed input", () => {
-  const dir = started()
-
-  assert.match(
-    fails("log", dir, JSON.stringify({ event: "nonsense" })).error,
-    /unknown ledger event/,
-  )
-  fails("log", dir, JSON.stringify({ role: "critic" }))
-  fails("log", dir, JSON.stringify(["run"]))
-  fails("log", dir, "{not json")
-  fails("log", dir)
-  fails(
-    "log",
-    "/nonexistent/.mise",
-    JSON.stringify({ event: "run", repo: "r", branch: "b", version: "3.0.0" }),
-  )
-  assert.deepEqual(ledger(dir), [])
-})
-
-test("log: the engine owns the timestamp", () => {
-  const dir = started()
-  const { error } = fails("log", dir, JSON.stringify({ event: "run", t: "x" }))
-
-  assert.match(error, /timestamp and seconds are set by the engine/)
-})
-
-// --- tally ---------------------------------------------------------------------
-
-function jsonl(...entries: object[]): string {
-  return entries.map((entry) => JSON.stringify(entry)).join("\n") + "\n"
-}
-
-test("tally: counts archived ledgers by event, step and detail", () => {
-  const finding = { event: "finding", step: "execute", source: "reviewer" }
-  const feedback = { event: "feedback", step: "review", kind: "point" }
-  const one = miseDir({
-    "feat-a.jsonl": jsonl(
-      { ...finding, changed: true },
-      { ...finding, changed: true },
-      {
-        event: "skip",
-        step: "critic",
-        reason: "no spec, nothing hard to undo",
-      },
-      { ...feedback, issue: "no retry on the 429 path" },
-      { ...feedback, issue: "empty state shows the spinner forever" },
-    ),
-    "feat-b.jsonl": jsonl({ ...finding, changed: true }),
-    "notes.md": "not a ledger",
-  })
-  const two = miseDir({
-    "fix-c.jsonl": jsonl({
-      event: "skip",
-      step: "critic",
-      reason: "entirely different wording",
-    }),
-  })
-
-  const out = ok("tally", one, two)
-
-  assert.equal(out.ledgers, 3)
-  assert.equal(out.projects, 2)
-  assert.equal(out.events, 7)
-  assert.equal(out.rows_total, 3)
-  assert.deepEqual(out.rows[0], {
-    event: "finding",
-    step: "execute",
-    detail: "source=reviewer changed=true",
-    count: 3,
-    runs: 2,
-    projects: 1,
-  })
-  // Free text never splits a row: the two skips group on event and step alone,
-  // and the two feedback items on their kind, whatever their `issue` says.
-  // It carries its first distinct wordings instead, as examples.
-  assert.deepEqual(out.rows[1], {
-    event: "feedback",
-    step: "review",
-    detail: "kind=point",
-    count: 2,
-    runs: 1,
-    projects: 1,
-    examples: [
-      "no retry on the 429 path",
-      "empty state shows the spinner forever",
-    ],
-  })
-  assert.deepEqual(out.rows[2], {
-    event: "skip",
-    step: "critic",
-    detail: "",
-    count: 2,
-    runs: 2,
-    projects: 2,
-    examples: ["no spec, nothing hard to undo", "entirely different wording"],
-  })
-})
-
-// close archives to `.claude/mise-ledger/<branch>.jsonl`, and every branch is
-// `feat/<slug>` or `fix/<slug>`.
-test("tally: finds ledgers archived under a branch's folders", () => {
-  const dir = miseDir({
-    "feat/a.jsonl": jsonl(
-      { event: "spawn", role: "critic", seconds: 60 },
-      { event: "spawn", role: "critic", seconds: 120 },
-    ),
-    "fix/b.jsonl": jsonl({ event: "spawn", role: "critic" }),
-  })
-
-  const out = ok("tally", dir)
-
-  assert.equal(out.ledgers, 2)
-  assert.deepEqual(out.rows[0], {
-    event: "spawn",
-    step: null,
-    detail: "role=critic",
-    count: 3,
-    runs: 2,
-    projects: 1,
-    avg_seconds: 90,
-  })
-})
-
-test("tally: the row list is capped and the total reported", () => {
-  const spawns = Array.from({ length: 60 }, (_, i) => ({
-    event: "spawn",
-    role: `role-${String(i).padStart(2, "0")}`,
-  }))
-  const dir = miseDir({ "feat-a.jsonl": jsonl(...spawns, spawns[0]) })
-
-  const out = ok("tally", dir)
-
-  assert.equal(out.rows_total, 60)
-  assert.equal(out.rows.length, 50)
-  assert.equal(out.rows[0].count, 2) // the repeated row sorts first
-  assert.equal(out.rows[0].detail, "role=role-00")
-})
-
-test("tally: unreadable lines are counted, never fatal", () => {
-  const dir = miseDir({
-    "feat-a.jsonl": '{"event":"run"}\n{not json\n["run"]\n{"role":"critic"}\n',
-  })
-
-  const out = ok("tally", dir)
-
-  assert.equal(out.events, 1)
-  assert.equal(out.unreadable, 3)
-})
-
-test("tally: an empty directory and a missing one", () => {
-  assert.deepEqual(ok("tally", miseDir()), {
-    ledgers: 0,
-    projects: 0,
-    events: 0,
-    rows_total: 0,
-    rows: [],
-  })
-  assert.match(
-    fails("tally", miseDir(), "/nonexistent/ledgers").error,
-    /ledger directory not found/,
-  )
+  assert.equal(ok("amend", dir).amendments, 2)
 })
 
 // --- broken state files are errors, never rebuilt ------------------------------
@@ -786,7 +435,7 @@ test("commands: a missing mise directory fails", () => {
     fails("mark", "/nonexistent/.mise", "goals", "done").error,
     /not found/,
   )
-  fails("amend", "/nonexistent/.mise", "text")
+  fails("amend", "/nonexistent/.mise")
 })
 
 // --- CLI ----------------------------------------------------------------------
