@@ -147,7 +147,6 @@ test("report: --write initializes the state file", () => {
     critic: null,
     execute: null,
     adherence: null,
-    sweep: null,
     review: null,
     gate: null,
   })
@@ -177,9 +176,6 @@ test("report: the full step order ends at close", () => {
   assert.equal(ok("report", dir).next_action, "step:adherence")
 
   ok("mark", dir, "adherence", "done")
-  assert.equal(ok("report", dir).next_action, "step:sweep")
-
-  ok("mark", dir, "sweep", "done")
   assert.equal(ok("report", dir).next_action, "step:review")
 
   ok("mark", dir, "review", "done")
@@ -270,7 +266,6 @@ test("report: with no spec, an added task file reopens execute", () => {
 
   markDone(dir, "01_01_fix.md")
   ok("mark", dir, "adherence", "done")
-  ok("mark", dir, "sweep", "done")
   assert.equal(ok("report", dir).next_action, "step:review")
 
   // An amendment in a run with no spec: its new task file is the index.
@@ -327,16 +322,17 @@ test("mark: a skip carries no reason and writes no ledger event", () => {
 
   assert.deepEqual(ledger(dir), [])
   assert.match(
-    fails("mark", dir, "sweep", "skipped", "nothing retired").error,
+    fails("mark", dir, "adherence", "skipped", "no families").error,
     /takes no reason/,
   )
-  assert.equal(state(dir).steps.sweep, null)
+  assert.equal(state(dir).steps.adherence, null)
 })
 
 test("mark: unknown steps and states are rejected", () => {
   const dir = started()
 
   assert.match(fails("mark", dir, "mock", "done").error, /expected a step/)
+  assert.match(fails("mark", dir, "sweep", "done").error, /expected a step/)
   assert.match(fails("mark", dir, "goals", "approved").error, /done\|skipped/)
   fails("mark", dir, "goals")
   fails("mark", dir)
@@ -356,19 +352,18 @@ test("mark: execute is derived, never marked", () => {
 
 // --- amend --------------------------------------------------------------------
 
-test("amend: reopens adherence and sweep and counts up", () => {
+test("amend: reopens adherence and counts up", () => {
   const dir = started({ "spec.md": SPEC })
   for (const step of ["goals", "spec", "critic"]) ok("mark", dir, step, "done")
   markDone(dir, "01_01_setup.md")
   markDone(dir, "01_02_build.md")
   ok("mark", dir, "adherence", "done")
-  ok("mark", dir, "sweep", "skipped")
   ok("mark", dir, "review", "done")
   assert.equal(ok("report", dir).next_action, "step:gate")
 
   const result = ok("amend", dir, "drop the cache layer")
   assert.equal(result.amendments, 1)
-  assert.deepEqual(result.reopened, ["adherence", "sweep"])
+  assert.deepEqual(result.reopened, ["adherence"])
 
   const report = ok("report", dir)
   assert.equal(report.next_action, "step:adherence")
@@ -376,7 +371,6 @@ test("amend: reopens adherence and sweep and counts up", () => {
 
   const written = state(dir)
   assert.equal(written.steps.adherence, null)
-  assert.equal(written.steps.sweep, null)
   assert.equal(written.steps.review, "done") // review is not reopened
 
   assert.equal(ok("amend", dir, "and the retry").amendments, 2)

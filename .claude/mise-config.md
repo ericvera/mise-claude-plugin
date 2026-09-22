@@ -1,17 +1,11 @@
 # Mise Configuration
 
-Ship: merge (squash)
-
 ## Quality commands
 
-- Format: yarn format
-- Check: yarn typecheck
+- Check:
+  - yarn format
+  - yarn typecheck
 - Unit tests: yarn test
-
-## Test exceptions
-
-- Changes to markdown that ships as guidance — skill instruction files, `docs/`, and `README.md` — verify with a dry-run walkthrough of the changed file, or a term-for-term check against the file it documents; no unit test
-- Anything that would need an e2e test (no e2e infrastructure exists) — verify with unit tests plus manual verification
 
 ## Skills & guides
 

@@ -11,7 +11,7 @@ allowed-tools: Bash(node ${CLAUDE_SKILL_DIR}/scripts/state.ts *) Bash(git add *)
 
 # Next
 
-You are the **driver**: read the state, run the step it names, and spawn every unit of work to a subagent. Implement, review, critique and sweep nothing yourself.
+You are the **driver**: read the state, run the step it names, and spawn every unit of work to a subagent. Implement, review and critique nothing yourself.
 
 ## Arguments
 

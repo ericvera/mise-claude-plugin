@@ -16,7 +16,7 @@
 //   mark <dir> <step> done|skipped   execute is never marked: it is derived
 //                            from spec.md `## Task index` vs tasks/done/; a
 //                            skip's reason belongs to the ledger, not the state
-//   amend <dir> "<text>"     +1 amendment, reopens adherence and sweep, logs it
+//   amend <dir> "<text>"     +1 amendment, reopens adherence, logs it
 //   log <dir> <json>         appends one timestamped ledger event
 //   tally <dir>…             counts archived ledgers by event, step and detail,
 //                            with the runs and projects each row spans
@@ -39,7 +39,7 @@ interface State {
   amendments: number
 }
 
-const STEPS = "goals spec critic execute adherence sweep review gate".split(" ")
+const STEPS = "goals spec critic execute adherence review gate".split(" ")
 const EVENTS = "run spawn finding stop feedback skip amend gate close".split(
   " ",
 )
@@ -297,15 +297,15 @@ function mark(dir: string, rest: string[]): object {
 }
 
 // An amendment changes a recorded decision: nothing is re-approved or
-// re-critiqued, but the driver re-answers the skip conditions for adherence and
-// sweep, so both reopen.
+// re-critiqued, but the driver re-answers the adherence skip condition, so that
+// step reopens.
 function amend(dir: string, rest: string[]): object {
   const text = rest.join(" ").trim()
 
   if (!text) fail('usage: state.ts amend .mise "<text>"')
 
   const { state } = loadState(dir)
-  const reopened = ["adherence", "sweep"]
+  const reopened = ["adherence"]
 
   state.amendments += 1
 

@@ -2,9 +2,9 @@
 
 Interview the owner, then write `.claude/mise-config.md` in the shape `../references/config-reference.md` defines — read it first, and never copy it into the project. An existing config is revisited section by section, its current value shown.
 
-Ask both questions in one turn, in SKILL.md's question format: confirm the Quality commands — Format, Check and Unit tests, inferred from `package.json` or the repo's equivalent — and "PR, merge, or leave shipping to you?", recommending PR and asking the style (squash, merge commit, or rebase) for a merge.
+Ask one question, in SKILL.md's question format: confirm the Quality commands — Check and Unit tests, inferred from `package.json` or the repo's equivalent.
 
-Then list the optional sections by name — Mock conditions, Test exceptions, Skills & guides, Adherence — say any of them can be filled later by re-running `/mise:next setup`, and fill now only the ones the owner names.
+Then list the optional sections by name — Mock conditions, Skills & guides, Adherence — say any of them can be filled later by re-running `/mise:next setup`, and fill now only the ones the owner names.
 
 Write the file with the sections filled and nothing else, print it, and confirm it is right. Code conventions the owner offers along the way belong in `CLAUDE.md` — offer to add them there.
 
