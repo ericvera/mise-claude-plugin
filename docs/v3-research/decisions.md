@@ -57,3 +57,8 @@ All twelve review-page recommendations accepted, plus: the owner drafts nothing 
 | 33  | No `progress.md`: the implementer's commit message carries key changes and deviations, and `review.md` is written from the task files and `git log`.  |
 | 34  | Review runs once over the whole diff after the last task, in batches: no per-task review, no 3-modules rule.                                          |
 | 35  | No `stuck` retry: an implementer failure of either kind stops the run and is relayed.                                                                |
+| 36  | The ledger's event fields live in `state.ts`: one header line per event, and `log` rejects a call that misses or invents a field. flow.md names only the moments to log. |
+| 37  | No loop-stop caveat on the critic: a round that returns a blocking finding is not a round that returned no new blocking finding.                      |
+| 38  | No "Judge that yourself" on the spec skip: every skip condition is already the driver's own call.                                                     |
+| 39  | The goals step carries no parts-skip clause: each numbered part states its own condition.                                                             |
+| 40  | One implementer failure report — `Task failed: <what you tried, what stopped you>`; no stuck/blocked distinction, the driver stops and relays it.     |
