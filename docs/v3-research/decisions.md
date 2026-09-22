@@ -48,3 +48,12 @@ All twelve review-page recommendations accepted, plus: the owner drafts nothing 
 | 24  | No `explore` role: the driver reads the code itself in the spec step.                                                                                 |
 | 25  | `mark <step> skipped` takes no reason; the state file stores the value and the ledger's `skip` event carries the reason.                              |
 | 26  | The ledger's `feedback` event stores `issue` — one line naming the defect or changed decision — not the owner's words verbatim.                       |
+| 27  | No `requirements.md`: the spec's task index and the task files carry the behavior the critic checks the goals against.                                |
+| 28  | No `Test exceptions` config: the task file's **Verification** states how a task is verified, and the spec writer names any substitute check there.    |
+| 29  | No sweep step or role: the retirements grep and the stale instruction/config check are two bullets of the reviewer's mandate over the whole diff.     |
+| 30  | No `Ship` config: close always pushes and opens a pull request.                                                                                      |
+| 31  | No `Format` quality command: a project that wants formatting lists it under `Check`.                                                                 |
+| 32  | No mock iteration loop: the mock is presented at the goals approval and revised through that approval's feedback.                                    |
+| 33  | No `progress.md`: the implementer's commit message carries key changes and deviations, and `review.md` is written from the task files and `git log`.  |
+| 34  | Review runs once over the whole diff after the last task, in batches: no per-task review, no 3-modules rule.                                          |
+| 35  | No `stuck` retry: an implementer failure of either kind stops the run and is relayed.                                                                |
