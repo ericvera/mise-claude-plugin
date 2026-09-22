@@ -1,7 +1,7 @@
 {
   "name": "mise",
   "displayName": "mise",
-  "description": "One self-sizing workflow for Claude Code: goals gated by you when a decision needs you, a spec and critic only when the work needs them, fresh-context Opus implementers per task and a reviewer over the whole diff, an adherence pass against your own past review notes, an open review stage that absorbs late decisions as amendments instead of resets, and a per-run ledger a retro reads under a change protocol.",
+  "description": "One self-sizing workflow for Claude Code: goals you approve before any code, fresh-context Opus subagents that implement and review, a review stage that absorbs late decisions as amendments, and a run ledger.",
   "version": "3.0.0",
   "author": {
     "name": "Eric Vera"

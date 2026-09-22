@@ -46,7 +46,7 @@ node ${CLAUDE_SKILL_DIR}/scripts/state.ts report .mise
 
 Every unit of work is an Agent call with `model: opus` and a prompt naming nothing but: the absolute path of `${CLAUDE_SKILL_DIR}/roles/<role>.md`, every scope and path that role file says its prompt names (absolute), and the absolute path of `.claude/mise-config.md`. Keep what it reports; never pull its sources into your own context.
 
-A scope past 20 files — diff files, task files, docs — goes out in batches of 20, one subagent per batch, each named its own `files N–M` slice; you merge their reports and open none of the files. Take a diff's file count from `git diff --shortstat <default-branch>...HEAD`, never its file list: 20 files of diff leaves a fresh context room for the code around them.
+A scope past 20 files — diff files, task files, docs — goes out in batches of 20, one subagent per batch, each named its own `files N–M` slice; you merge their reports and open none of the files. Take a diff's file count from `git diff --shortstat <default-branch>...HEAD -- . ':!.mise'`, never its file list: 20 files of diff leaves a fresh context room for the code around them.
 
 ## Output
 

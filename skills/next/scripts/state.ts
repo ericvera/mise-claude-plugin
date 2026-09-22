@@ -13,25 +13,16 @@
 // Commands (each prints JSON to stdout; failures print {error} and exit 1):
 //   report <dir> [--write]   in_flight, next_action, tasks, amendments;
 //                            --write initializes a fresh state file
-//   mark <dir> <step> done|skipped   execute is never marked: it is derived
-//                            from spec.md `## Task index` vs tasks/done/; a
-//                            skip's reason belongs to the ledger, not the state
-//   amend <dir> "<text>"     +1 amendment, reopens adherence, logs it
-//   log <dir> <json>         appends one timestamped ledger event
-//   tally <dir>…             counts archived ledgers by event, step and detail,
-//                            with the runs and projects each row spans
+//   mark <dir> <step> done|skipped
+//   amend <dir> "<text>"     +1 amendment, reopens execute and adherence, logs it
+//   log <dir> <json>         appends one ledger event: EVENT_FIELDS below
+//   tally <dir>…             counts archived ledgers (searched recursively) by
+//                            event, step and detail, with the runs, projects,
+//                            average seconds and example free text of each row
 //
-// Ledger events — `log` takes exactly the fields listed, and no others, so the
-// rows the retro tallies compare across runs and projects:
-//   run       repo, branch, version — once, at start
-//   spawn     role, step, round, minutes, verdict — per subagent dispatched
-//   skip      step, reason — per skipped step
-//   finding   source, step, round, category, changed — per finding reported
-//   stop      step, reason, waitMinutes — per stop at the owner
-//   feedback  step, kind, issue — per review item; `issue` never verbatim
-//   gate      command, seconds, pass — per gate command run
-//   close     codeLines, artifactLines — once, at close
-//   amend     text — written by the `amend` command, never by `log`
+// The engine stamps every event with `t` and with `seconds` since the event
+// before it, so no duration is ever model-reported: a spawn's seconds is its
+// run time, a stop's is the owner's wait.
 
 import {
   appendFileSync,
@@ -54,17 +45,48 @@ interface State {
 const STEPS = "goals spec critic execute adherence review gate".split(" ")
 const FIELDS = "version started steps amendments".split(" ")
 
-// The ledger's schema, documented event by event in the header above.
+// The ledger's schema: `log` takes exactly these fields, and no others, so the
+// rows the retro tallies compare across runs and projects.
 const EVENT_FIELDS: Record<string, string[] | undefined> = {
   run: ["repo", "branch", "version"],
-  spawn: ["role", "step", "round", "minutes", "verdict"],
+  spawn: ["role", "step", "round", "verdict"],
   skip: ["step", "reason"],
   finding: ["source", "step", "round", "category", "changed"],
-  stop: ["step", "reason", "waitMinutes"],
+  stop: ["step", "reason"],
   feedback: ["step", "kind", "issue"],
-  gate: ["command", "seconds", "pass"],
+  gate: ["command", "pass"],
   close: ["codeLines", "artifactLines"],
   amend: ["text"],
+}
+
+const ROLES = ["implementer", "reviewer", "critic", "adherence"]
+
+type Check = [expected: string, test: (value: unknown) => boolean]
+
+const oneOf = (values: string[]): Check => [
+  values.join("|"),
+  (v) => values.includes(v as string),
+]
+
+const atLeast = (min: 0 | 1): Check => [
+  min ? "a positive integer" : "a non-negative integer",
+  (v) => Number.isInteger(v) && (v as number) >= min,
+]
+
+const BOOLEAN: Check = ["true|false", (v) => typeof v === "boolean"]
+
+// A field's allowed values: a typo or a variant spelling would split the retro's
+// tally rows, so `log` refuses it. Fields not listed take any non-empty string.
+const FIELD_CHECKS: Record<string, Check> = {
+  step: oneOf(["start", ...STEPS, "close"]),
+  role: oneOf(ROLES),
+  source: oneOf(ROLES),
+  kind: oneOf(["point", "pattern", "decision", "voided"]),
+  round: atLeast(1),
+  changed: BOOLEAN,
+  pass: BOOLEAN,
+  codeLines: atLeast(0),
+  artifactLines: atLeast(0),
 }
 
 const TASK_FILE = /^(\d{2}_\d{2})_.*\.md$/
@@ -134,10 +156,8 @@ function parseState(text: string): { state?: State; problems: string[] } {
     for (const [key, value] of Object.entries(r.steps as object)) {
       if (!STEPS.includes(key)) problems.push(`unknown step "${key}" in steps`)
       else if (value === null) continue
-      else if (key === "execute")
-        problems.push(
-          "steps.execute is derived from tasks/done/, never recorded",
-        )
+      else if (key === "execute" && value === "skipped")
+        problems.push("steps.execute is never skipped")
       else if (value === "done" || value === "skipped") steps[key] = value
       else problems.push(`invalid value for steps.${key}`)
     }
@@ -187,10 +207,35 @@ function writeState(dir: string, state: State): void {
 }
 
 function appendLedger(dir: string, event: Record<string, unknown>): object {
-  const entry = { t: new Date().toISOString(), ...event }
+  const now = new Date()
+  const previous = lastLedgerTime(join(dir, "ledger.jsonl"))
+  const entry = {
+    t: now.toISOString(),
+    ...event,
+    ...(previous === null
+      ? {}
+      : {
+          seconds: Math.max(0, Math.round((now.getTime() - previous) / 1000)),
+        }),
+  }
   appendFileSync(join(dir, "ledger.jsonl"), JSON.stringify(entry) + "\n")
 
   return entry
+}
+
+// The time of the ledger's last event, or null when there is none to time from.
+function lastLedgerTime(path: string): number | null {
+  if (!existsSync(path)) return null
+
+  const last = readFileSync(path, "utf8").trimEnd().split("\n").at(-1)
+
+  try {
+    const time = Date.parse(JSON.parse(last ?? "").t)
+
+    return Number.isNaN(time) ? null : time
+  } catch {
+    return null
+  }
 }
 
 // IDs are the leading NN_MM of the task filenames listed under `## Task index`
@@ -255,12 +300,26 @@ function taskFile(dir: string, id: string | undefined): string | null {
   return name ? join("tasks", name) : null
 }
 
-// The first step in order that is still open; execute is open exactly while the
-// task index holds ids that are not in tasks/done/.
+// The index's done and remaining task ids; a done file the index does not list
+// is ignored.
+function taskProgress(
+  dir: string,
+  state: State,
+): { done: string[]; remaining: string[] } {
+  const ids = taskIndexIds(dir, state)
+  const done = doneTaskIds(dir).filter((id) => ids.includes(id))
+
+  return { done, remaining: ids.filter((id) => !done.includes(id)) }
+}
+
+// The first step in order that is still open; execute stays open while the task
+// index holds ids that are not in tasks/done/, and after the last task until its
+// review marks it done — so a resume never skips that review.
 function nextAction(state: State, remaining: string[]): string {
   for (const step of STEPS) {
     if (step === "execute") {
-      if (remaining.length) return "step:execute"
+      if (remaining.length || state.steps.execute !== "done")
+        return "step:execute"
     } else if (state.steps[step] === null) return `step:${step}`
   }
 
@@ -274,9 +333,7 @@ function report(dir: string, rest: string[]): object {
     return { in_flight: false }
 
   const { state, file } = loadState(dir)
-  const ids = taskIndexIds(dir, state)
-  const done = doneTaskIds(dir).filter((id) => ids.includes(id))
-  const remaining = ids.filter((id) => !done.includes(id))
+  const { done, remaining } = taskProgress(dir, state)
 
   if (rest.includes("--write") && file === "new") writeState(dir, state)
 
@@ -301,16 +358,23 @@ function mark(dir: string, rest: string[]): object {
   if (!STEPS.includes(step))
     fail(`expected a step (${STEPS.join(", ")}), got ${str(step)}`)
 
-  if (step === "execute")
-    fail("execute is derived from tasks/done/ and is never marked")
-
   if (value !== "done" && value !== "skipped")
     fail(`expected done|skipped, got ${str(value)}`)
+
+  if (step === "execute" && value === "skipped")
+    fail("execute is never skipped")
 
   if (rest.length > 2)
     fail(`mark takes no reason — log a skip event with it instead`)
 
   const { state } = loadState(dir)
+
+  if (step === "execute") {
+    const { remaining } = taskProgress(dir, state)
+
+    if (remaining.length)
+      fail(`execute has ${remaining.length} task(s) left, next ${remaining[0]}`)
+  }
 
   state.steps[step] = value
   writeState(dir, state)
@@ -319,15 +383,15 @@ function mark(dir: string, rest: string[]): object {
 }
 
 // An amendment changes a recorded decision: nothing is re-approved or
-// re-critiqued, but the driver re-answers the adherence skip condition, so that
-// step reopens.
+// re-critiqued, but its tasks run through execute and its review, and the
+// driver re-answers the adherence skip condition, so both steps reopen.
 function amend(dir: string, rest: string[]): object {
   const text = rest.join(" ").trim()
 
   if (!text) fail('usage: state.ts amend .mise "<text>"')
 
   const { state } = loadState(dir)
-  const reopened = ["adherence"]
+  const reopened = ["execute", "adherence"]
 
   state.amendments += 1
 
@@ -363,7 +427,8 @@ function log(dir: string, rest: string[]): object {
 
   if (name === "amend") fail("an amend event is written by `state.ts amend`")
 
-  if ("t" in event) fail("the ledger timestamp is set by the engine")
+  if ("t" in event || "seconds" in event)
+    fail("the ledger timestamp and seconds are set by the engine")
 
   const given = Object.keys(event).filter((key) => key !== "event")
   const missing = fields.filter((key) => !given.includes(key))
@@ -376,13 +441,26 @@ function log(dir: string, rest: string[]): object {
         (unknown.length ? `; unknown ${unknown.join(", ")}` : ""),
     )
 
+  for (const key of fields) {
+    const check = FIELD_CHECKS[key]
+    const value = event[key]
+
+    if (check ? !check[1](value) : typeof value !== "string" || !value.trim())
+      fail(
+        `${name} ${key} must be ${check ? check[0] : "a non-empty string"}, got ${str(value)}`,
+      )
+  }
+
   return appendLedger(dir, event)
 }
 
 // Fifty accumulated ledgers run to tens of thousands of lines, so the retro
 // never opens one: it reads these counts. Rows group on the fields that repeat
 // across runs; free text (reason, text, issue) is left out, since one row
-// per distinct wording would be the ledger again rather than an aggregate.
+// per distinct wording would be the ledger again rather than an aggregate; each
+// row instead carries a few examples of it, enough to name what went wrong.
+const FREE_TEXT = ["issue", "reason", "text"]
+const EXAMPLES = 3
 const DETAIL = "role source category changed kind verdict command pass".split(
   " ",
 )
@@ -394,6 +472,8 @@ interface Row {
   count: number
   runs: Set<string>
   projects: Set<string>
+  seconds: number[]
+  examples: Set<string>
 }
 
 function tally(dir: string, rest: string[]): object {
@@ -407,7 +487,11 @@ function tally(dir: string, rest: string[]): object {
   for (const d of dirs) {
     if (!existsSync(d)) fail(`ledger directory not found: ${d}`)
 
-    for (const name of readdirSync(d).filter((f) => f.endsWith(".jsonl"))) {
+    // Ledgers archive under their branch name, so `feat/x.jsonl` sits in a
+    // subdirectory.
+    const names = readdirSync(d, { recursive: true, encoding: "utf8" })
+
+    for (const name of names.filter((f) => f.endsWith(".jsonl")).sort()) {
       ledgers += 1
       projects.add(d)
 
@@ -442,9 +526,18 @@ function tally(dir: string, rest: string[]): object {
           count: 0,
           runs: new Set<string>(),
           projects: new Set<string>(),
+          seconds: [],
+          examples: new Set<string>(),
         }
 
         row.count += 1
+
+        if (typeof entry.seconds === "number") row.seconds.push(entry.seconds)
+
+        for (const k of FREE_TEXT)
+          if (typeof entry[k] === "string" && row.examples.size < EXAMPLES)
+            row.examples.add(entry[k].slice(0, 100))
+
         row.runs.add(join(d, name))
         row.projects.add(d)
         rows.set(key, row)
@@ -470,6 +563,14 @@ function tally(dir: string, rest: string[]): object {
       count: row.count,
       runs: row.runs.size,
       projects: row.projects.size,
+      ...(row.seconds.length
+        ? {
+            avg_seconds: Math.round(
+              row.seconds.reduce((a, b) => a + b, 0) / row.seconds.length,
+            ),
+          }
+        : {}),
+      ...(row.examples.size ? { examples: [...row.examples] } : {}),
     })),
   }
 }

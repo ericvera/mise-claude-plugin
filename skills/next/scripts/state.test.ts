@@ -172,7 +172,11 @@ test("report: the full step order ends at close", () => {
   markDone(dir, "01_01_setup.md")
   assert.equal(ok("report", dir).next_action, "step:execute")
 
+  // The last task done leaves execute open for its whole-diff review.
   markDone(dir, "01_02_build.md")
+  assert.equal(ok("report", dir).next_action, "step:execute")
+
+  ok("mark", dir, "execute", "done")
   assert.equal(ok("report", dir).next_action, "step:adherence")
 
   ok("mark", dir, "adherence", "done")
@@ -238,9 +242,7 @@ test("report: only the Task index section supplies ids", () => {
   ok("mark", dir, "spec", "done")
   ok("mark", dir, "critic", "done")
 
-  const report = ok("report", dir)
-  assert.equal(report.tasks.remaining, 0)
-  assert.equal(report.next_action, "step:adherence")
+  assert.equal(ok("report", dir).tasks.remaining, 0)
 })
 
 test("report: a skipped spec makes the work one implicit task", () => {
@@ -256,7 +258,7 @@ test("report: a skipped spec makes the work one implicit task", () => {
   markDone(dir, "01_01_only.md")
   report = ok("report", dir)
   assert.equal(report.tasks.done, 1)
-  assert.equal(report.next_action, "step:adherence")
+  assert.equal(report.tasks.remaining, 0)
 })
 
 test("report: with no spec, an added task file reopens execute", () => {
@@ -265,6 +267,7 @@ test("report: with no spec, an added task file reopens execute", () => {
     ok("mark", dir, step, "skipped")
 
   markDone(dir, "01_01_fix.md")
+  ok("mark", dir, "execute", "done")
   ok("mark", dir, "adherence", "done")
   assert.equal(ok("report", dir).next_action, "step:review")
 
@@ -289,6 +292,7 @@ test("report: execute reopens when the spec gains a task", () => {
   ok("mark", dir, "critic", "done")
   markDone(dir, "01_01_setup.md")
   markDone(dir, "01_02_build.md")
+  ok("mark", dir, "execute", "done")
   assert.equal(ok("report", dir).next_action, "step:adherence")
 
   writeFileSync(join(dir, "spec.md"), SPEC + "- `01_03_ship.md`\n")
@@ -339,37 +343,45 @@ test("mark: unknown steps and states are rejected", () => {
   assert.deepEqual(state(dir).steps.goals, null)
 })
 
-test("mark: execute is derived, never marked", () => {
-  const dir = started()
+test("mark: execute closes only once every task is done, and never skips", () => {
+  const dir = started({ "spec.md": SPEC })
+  for (const step of ["goals", "spec", "critic"]) ok("mark", dir, step, "done")
+  markDone(dir, "01_01_setup.md")
 
-  for (const value of ["done", "skipped"]) {
-    const { error } = fails("mark", dir, "execute", value)
-    assert.match(error, /never marked/)
-  }
-
+  assert.match(
+    fails("mark", dir, "execute", "done").error,
+    /1 task\(s\) left, next 01_02/,
+  )
+  assert.match(fails("mark", dir, "execute", "skipped").error, /never skipped/)
   assert.equal(state(dir).steps.execute, null)
+
+  markDone(dir, "01_02_build.md")
+  ok("mark", dir, "execute", "done")
+  assert.equal(state(dir).steps.execute, "done")
 })
 
 // --- amend --------------------------------------------------------------------
 
-test("amend: reopens adherence and counts up", () => {
+test("amend: reopens execute and adherence and counts up", () => {
   const dir = started({ "spec.md": SPEC })
   for (const step of ["goals", "spec", "critic"]) ok("mark", dir, step, "done")
   markDone(dir, "01_01_setup.md")
   markDone(dir, "01_02_build.md")
+  ok("mark", dir, "execute", "done")
   ok("mark", dir, "adherence", "done")
   ok("mark", dir, "review", "done")
   assert.equal(ok("report", dir).next_action, "step:gate")
 
   const result = ok("amend", dir, "drop the cache layer")
   assert.equal(result.amendments, 1)
-  assert.deepEqual(result.reopened, ["adherence"])
+  assert.deepEqual(result.reopened, ["execute", "adherence"])
 
   const report = ok("report", dir)
-  assert.equal(report.next_action, "step:adherence")
+  assert.equal(report.next_action, "step:execute")
   assert.equal(report.amendments, 1)
 
   const written = state(dir)
+  assert.equal(written.steps.execute, null)
   assert.equal(written.steps.adherence, null)
   assert.equal(written.steps.review, "done") // review is not reopened
 
@@ -424,7 +436,6 @@ test("log: appends timestamped events to ledger.jsonl", () => {
       role: "critic",
       step: "critic",
       round: 1,
-      minutes: 4,
       verdict: "blocking",
     }),
   )
@@ -432,15 +443,97 @@ test("log: appends timestamped events to ledger.jsonl", () => {
   const events = ledger(dir)
   assert.equal(events.length, 2)
   assert.equal(events[0].branch, "fix-x")
+  assert.equal("seconds" in events[0], false)
   assert.deepEqual(Object.keys(events[1]), [
     "t",
     "event",
     "role",
     "step",
     "round",
-    "minutes",
     "verdict",
+    "seconds",
   ])
+})
+
+// Durations are never model-reported: each event is timed from the one before.
+test("log: the engine times each event from the one before", () => {
+  const dir = started()
+  const earlier = new Date(Date.now() - 90_000).toISOString()
+
+  writeFileSync(
+    join(dir, "ledger.jsonl"),
+    JSON.stringify({ t: earlier, event: "run" }) + "\n",
+  )
+  ok(
+    "log",
+    dir,
+    JSON.stringify({ event: "stop", step: "goals", reason: "approval" }),
+  )
+
+  const seconds = ledger(dir)[1].seconds
+  assert.ok(seconds >= 90 && seconds < 100, `seconds ${seconds}`)
+  assert.match(
+    fails(
+      "log",
+      dir,
+      JSON.stringify({
+        event: "gate",
+        command: "yarn test",
+        pass: true,
+        seconds: 3,
+      }),
+    ).error,
+    /seconds are set by the engine/,
+  )
+})
+
+// A variant spelling would split the retro's tally rows, so it is refused.
+test("log: field values are checked", () => {
+  const dir = started()
+  const spawn = {
+    event: "spawn",
+    role: "reviewer",
+    step: "execute",
+    round: 1,
+    verdict: "none",
+  }
+
+  ok("log", dir, JSON.stringify(spawn))
+
+  for (const [bad, message] of [
+    [{ step: "Execute" }, /spawn step must be start\|goals/],
+    [{ role: "Reviewer" }, /spawn role must be implementer\|reviewer/],
+    [{ round: 0 }, /round must be a positive integer/],
+    [{ round: "1" }, /round must be a positive integer/],
+    [{ verdict: "" }, /verdict must be a non-empty string/],
+  ] as const)
+    assert.match(
+      fails("log", dir, JSON.stringify({ ...spawn, ...bad })).error,
+      message,
+    )
+
+  assert.match(
+    fails(
+      "log",
+      dir,
+      JSON.stringify({ event: "gate", command: "yarn test", pass: "true" }),
+    ).error,
+    /gate pass must be true\|false/,
+  )
+  assert.match(
+    fails(
+      "log",
+      dir,
+      JSON.stringify({
+        event: "feedback",
+        step: "review",
+        kind: "nit",
+        issue: "x",
+      }),
+    ).error,
+    /kind must be point\|pattern\|decision\|voided/,
+  )
+  assert.equal(ledger(dir).length, 1)
 })
 
 // The fields are what the retro tallies on, so a half-formed event is refused
@@ -489,7 +582,7 @@ test("log: the engine owns the timestamp", () => {
   const dir = started()
   const { error } = fails("log", dir, JSON.stringify({ event: "run", t: "x" }))
 
-  assert.match(error, /timestamp is set by the engine/)
+  assert.match(error, /timestamp and seconds are set by the engine/)
 })
 
 // --- tally ---------------------------------------------------------------------
@@ -540,6 +633,7 @@ test("tally: counts archived ledgers by event, step and detail", () => {
   })
   // Free text never splits a row: the two skips group on event and step alone,
   // and the two feedback items on their kind, whatever their `issue` says.
+  // It carries its first distinct wordings instead, as examples.
   assert.deepEqual(out.rows[1], {
     event: "feedback",
     step: "review",
@@ -547,6 +641,10 @@ test("tally: counts archived ledgers by event, step and detail", () => {
     count: 2,
     runs: 1,
     projects: 1,
+    examples: [
+      "no retry on the 429 path",
+      "empty state shows the spinner forever",
+    ],
   })
   assert.deepEqual(out.rows[2], {
     event: "skip",
@@ -555,6 +653,32 @@ test("tally: counts archived ledgers by event, step and detail", () => {
     count: 2,
     runs: 2,
     projects: 2,
+    examples: ["no spec, nothing hard to undo", "entirely different wording"],
+  })
+})
+
+// close archives to `.claude/mise-ledger/<branch>.jsonl`, and every branch is
+// `feat/<slug>` or `fix/<slug>`.
+test("tally: finds ledgers archived under a branch's folders", () => {
+  const dir = miseDir({
+    "feat/a.jsonl": jsonl(
+      { event: "spawn", role: "critic", seconds: 60 },
+      { event: "spawn", role: "critic", seconds: 120 },
+    ),
+    "fix/b.jsonl": jsonl({ event: "spawn", role: "critic" }),
+  })
+
+  const out = ok("tally", dir)
+
+  assert.equal(out.ledgers, 2)
+  assert.deepEqual(out.rows[0], {
+    event: "spawn",
+    step: null,
+    detail: "role=critic",
+    count: 3,
+    runs: 2,
+    projects: 1,
+    avg_seconds: 90,
   })
 })
 
@@ -626,7 +750,7 @@ test("report: hand-edited state files are errors", () => {
     { ...good, status: "active" },
     { ...good, steps: { goals: "approved" } },
     { ...good, steps: { mock: "done" } },
-    { ...good, steps: { execute: "done" } },
+    { ...good, steps: { execute: "skipped" } },
     { ...good, steps: "goals" },
     { ...good, skipReason: {} }, // the retired v2/v3.0 field
     { version: 3, started: good.started },

@@ -1,10 +1,10 @@
 # mise — Claude Code workflow skills
 
-A Claude Code plugin that drives a piece of work — a bug fix, a feature — from description to shipped branch. One flow at every size: each step checks whether the work needs it and skips itself when it does not. Fresh-context subagents implement, review and critique; the driver only routes.
+A Claude Code plugin that drives a piece of work — a bug fix, a feature — from description to shipped branch. One flow at every size: a step the work does not need skips itself. Fresh-context Opus subagents implement, review and critique; the driver, on your session model, only routes.
 
 The name comes from _mise en place_ — prep everything before the pan gets hot.
 
-v3 was cut from two months of measured runs: every surviving instruction cites the run evidence that earned it ([docs/line-evidence.md](docs/line-evidence.md)). What did not earn its cost — a documenter pass, an acceptance subagent, a per-run retrospective, a checklist every role re-answers, resets when an early document changes, a separate sweep pass, a progress log, a requirements file, and per-task reviews — is gone.
+v3 keeps only what two months of measured runs showed earning its cost, and every instruction cites the run evidence behind it ([docs/line-evidence.md](docs/line-evidence.md)). Gone from 2.x: the documenter pass, the acceptance subagent, the per-run retrospective, the review checklist, resets when an early document changes, the sweep pass, the progress log, the requirements file, and per-task reviews.
 
 ## Install
 
@@ -26,47 +26,36 @@ Requires Node.js 24+ on your PATH — the state engine is TypeScript that Node [
 
 ## Usage
 
-| Command                       | What it does                                                        |
-| ----------------------------- | ------------------------------------------------------------------- |
-| `/mise:next`                  | Continue the work in flight, or ask what to work on                 |
-| `/mise:next some description` | Start a bug fix or feature from that description                    |
-| `/mise:next setup`            | (Re)run project configuration                                       |
-| `/mise:retro`                 | Tally the run ledgers and propose changes under the change protocol |
+| Command                       | What it does                                                             |
+| ----------------------------- | ------------------------------------------------------------------------ |
+| `/mise:next`                  | Continue the work in flight, or ask what to work on                      |
+| `/mise:next some description` | Start a bug fix or feature from that description                         |
+| `/mise:next setup`            | (Re)run project configuration                                            |
+| `/mise:retro`                 | Tally the run ledgers and propose instruction changes for you to approve |
 
-Project details live in the generated `.claude/mise-config.md`. Required: the `## Quality commands` — Check (lint, typecheck, formatting and the build where you have them) and Unit tests. Optional: `## Mock conditions`, `## Skills & guides`, `## Adherence`. Setup infers the quality commands from your package manifest and asks one question: confirm them. The rest is fixed: work in flight lives in `.mise/` on its branch, ledgers archive to `.claude/mise-ledger/`, branches are `feat/<slug>` and `fix/<slug>`, and close pushes the branch and opens a pull request.
+## Configuration
+
+Setup writes `.claude/mise-config.md`. Required: `## Quality commands` — Check and Unit tests, inferred from your package manifest for you to confirm. Optional: `## Mock conditions`, `## Skills & guides`, `## Adherence`. [config-reference.md](skills/next/references/config-reference.md) defines each section.
+
+Nothing else is configurable: work in flight lives in `.mise/` on its branch, committed as it goes so any checkout resumes it; branches are `feat/<slug>` or `fix/<slug>`; run ledgers archive to `.claude/mise-ledger/`.
 
 ## How it works
 
-One piece of work per branch. The nine steps run in order; each has a **skip condition** the driver answers at the start and again after any amendment.
+One piece of work per branch, nine steps in order. The run waits for you at **goals** and **review**; otherwise it stops only on a failure it cannot fix.
 
-| Step               | Skips when                              | What runs                                                                                                                                                                                                                                                                    |
-| ------------------ | --------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **start**          | never                                   | your description goes to `goals.md` verbatim; a `feat/<slug>` or `fix/<slug>` branch; bug fix or feature                                                                                                                                                                     |
-| **goals** _(you)_  | never                                   | questions one round at a time when a decision is yours to make; an HTML mock when `## Mock conditions` match; then a statement of at most 3 lines — the issue, the approach, what the run will skip — and the run waits for your approval                                    |
-| **spec**           | the work fits one implementer's context | the driver reads the code itself, then writes `spec.md` (What, Design, Hard-to-undo, Task index) and one file per task                                                                                                                                                       |
-| **critic**         | no spec and nothing hard to undo        | rounds over the spec; stops when a round finds nothing new that blocks; hard cap 5                                                                                                                                                                                           |
-| **execute**        | never                                   | per task: `implementer` (a bug fix's regression test first, seen to fail) → commit; after the last task, `reviewer` over the whole diff in 20-file batches — correctness, plus what the spec retires and the instruction files the diff never touched → at most 2 fix rounds |
-| **adherence**      | no `## Adherence` section               | one `adherence` subagent per rule family per 20-file batch of the diff, file by file, against your own past review notes; a fix round per family that flags anything, at most 2                                                                                              |
-| **review** _(you)_ | never                                   | `review.md` — one line per task, 60 at most — says what changed and how to verify it; the run waits until you say done                                                                                                                                                       |
-| **gate**           | never                                   | Check, Unit tests, e2e through its required guide — once, one repair, one re-run                                                                                                                                                                                             |
-| **close**          | never                                   | ledger copied to `.claude/mise-ledger/`; `.mise/` removed; branch pushed and a pull request opened                                                                                                                                                                           |
+1. **start** — your description becomes `goals.md`, on a new branch.
+2. **goals** — questions where a decision is yours, an HTML mock when `## Mock conditions` match, then a statement of at most 3 lines for you to approve.
+3. **spec** — a design and one file per task, when the work outgrows one implementer or touches anything hard to undo.
+4. **critic** — rounds over the spec, when there is one.
+5. **execute** — an `implementer` per task, then a `reviewer` over the whole diff.
+6. **adherence** — the diff checked against your own past review notes, one subagent per rule family `## Adherence` names.
+7. **review** — `review.md` says what changed and how to verify it. Give feedback in chat, or as Delta Review notes where the `delta:review-notes` skill is installed; a changed decision becomes an amendment that adds tasks instead of restarting the run.
+8. **gate** — Check, Unit tests and any required e2e suite.
+9. **close** — the branch pushed and a pull request opened.
 
-**Review stage.** Feedback arrives in chat, or through the `delta:review-notes` skill's contract where you have that skill installed and say there are notes. It is handled by what it changes: a **point** fix is batched; a **pattern** ("everywhere") is listed in full before it is fixed; a changed **decision** becomes a dated amendment to the spec, and only the affected work becomes new tasks — finished tasks stay finished, nothing is re-approved or re-critiqued; a **voided** approach gets one offer of a re-plan, your call. The model states a factual objection once, then does what you decide.
-
-**Adherence.** The step for the defects written rules do not stop. `## Adherence` names rule families (tests, comments, vocabulary…), each pointing at a file of your verbatim past review notes grouped by sub-pattern with the code shape that drew them — keep each under ~150 lines, since every subagent reads it whole. A fresh-context subagent per family and batch reads the diff file by file, cites the matching example for each hit, and logs a row per flagged file, never one per passing file. Lint what lint can catch first; the vocabulary family also checks new terms against a glossary.
-
-**Ledger.** Every run appends `ledger.jsonl`: spawns, findings and whether they changed anything, stops and wait time, each feedback item distilled to its issue, skips, amendments, gate runs. `/mise:retro` never opens a ledger: `state.ts tally` counts them by event, step and detail with the runs and projects each row spans, and the retro applies the change protocol to those rows: an issue is eligible after 3 runs or 2 projects (once, if the harm is irreversible); before any edit — was the rule already in context, can a tool enforce it, is it project or generic, can a line be fixed or deleted instead, which ledger signal will show it worked. Every added line names a line removed. Default outcome: log only. You approve a batch table; the retro never edits files itself.
-
-**Models.** The driver runs on your session model; every subagent is dispatched on Opus.
+The mechanics are in [skills/next/flow.md](skills/next/flow.md).
 
 **Caveat:** results are exactly as good as your verification — the workflow leans on your linters, unit tests and e2e coverage to keep unattended steps grounded.
-
-## Design
-
-- **One flow, self-sizing** — size was a proxy; the questions that matter are whether a decision needs you, whether the work fits one context, and whether anything is hard to undo.
-- **Cut by default** — a mechanism stays only while the ledger shows it earning its cost.
-- **Artifacts are scaffolding** — committed as work progresses so any checkout resumes it, removed at close.
-- **Every artifact and every read is bounded** — whole-diff passes go out in 20-file batches whose summaries the driver merges without opening a file; `adherence.md` lists flagged files only; an implementer reads just the files its task names; `review.md` is one sitting's reading; the state report returns counts and the next task's path, not lists that grow with the run.
 
 ## Development
 
@@ -76,7 +65,7 @@ Load the plugin straight from a checkout:
 claude --plugin-dir /path/to/mise-claude-plugin
 ```
 
-Follow [docs/skill-authoring.md](docs/skill-authoring.md) when editing instruction files; each shipped file has a line budget and every line maps to evidence in [docs/line-evidence.md](docs/line-evidence.md). The state engine's tests run with `yarn test`; `yarn typecheck` must pass. The research behind v3 is under the `v3-research` branch (https://github.com/ericvera/mise-claude-plugin/tree/v3-research/docs/v3-research).
+Follow [docs/skill-authoring.md](docs/skill-authoring.md) when editing instruction files. The state engine's tests run with `yarn test`; `yarn typecheck` must pass. The research behind v3 is under the `v3-research` branch (https://github.com/ericvera/mise-claude-plugin/tree/v3-research/docs/v3-research).
 
 ## Credits
 

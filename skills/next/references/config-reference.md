@@ -1,6 +1,6 @@
 # mise-config reference
 
-Setup's reference for `.claude/mise-config.md`, never copied into a project. The file holds values only — no instructional prose — because every step and every fresh-context subagent reads it. The `##` sections, in this order:
+Setup's reference for `.claude/mise-config.md`. The file holds values only — no instructional prose — because every step and every fresh-context subagent reads it. The `##` sections, in this order:
 
 ```markdown
 # Mise Configuration

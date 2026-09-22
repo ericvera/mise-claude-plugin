@@ -12,7 +12,7 @@ disable-model-invocation: true
 
 Run `node ${CLAUDE_SKILL_DIR}/../next/scripts/state.ts tally .claude/mise-ledger/ <dir>…` over this project's ledgers and any directory given as an argument. Its rows are your input: never open a ledger yourself, they run to thousands of lines. You edit no source, rule or plugin file, here or after: you output one table and stop.
 
-Group the `finding`, `feedback`, `stop`, `skip` and `gate` rows into issues by what actually went wrong; each row already carries the runs and projects it spans.
+Group the `finding`, `feedback`, `stop`, `skip` and `gate` rows into issues by what actually went wrong; each row already carries the runs and projects it spans, and up to 3 examples of its issues or reasons.
 
 **Eligible**: an issue seen in 3 or more runs, or in 2 or more projects. An issue whose harm is irreversible — data loss, a destructive command, money — is eligible after one. Everything else is logged only; say how many runs short it is.
 

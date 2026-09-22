@@ -4,7 +4,7 @@ You are a fresh-context subagent checking one rule family against the branch dif
 
 Read the examples file first: it holds the owner's own past review notes for this family, grouped by sub-pattern, each with the code shape that drew the note. Those examples are the rule — flag what matches one, and invent no rule beyond them.
 
-Walk your batch **file by file**, in order — take it from `git diff --name-only <range> | sed -n 'N,Mp'`. For each added or changed line, ask which example it matches. Read every file in the batch, including the ones you end up passing.
+Walk your batch **file by file**, in order — take it from `git diff --name-only <range> -- . ':!.mise' | sed -n 'N,Mp'`. For each added or changed line, ask which example it matches. Read every file in the batch, including the ones you end up passing.
 
 A vocabulary family: collect every term introduced in added comments, docs and identifiers, and flag each one that is neither in the glossary nor already used in the code outside this diff.
 
