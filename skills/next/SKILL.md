@@ -6,7 +6,7 @@ description: |
   continue work on a feature.
 argument-hint: "[setup | quick | full | what to work on]"
 disable-model-invocation: true
-allowed-tools: Bash(node ${CLAUDE_SKILL_DIR}/scripts/state.ts *) Bash(git add *) Bash(git commit *) Bash(git mv *) Bash(git branch *) Bash(git switch *) Bash(mkdir *)
+allowed-tools: Bash(node ${CLAUDE_SKILL_DIR}/scripts/state.ts *) Bash(git add *) Bash(git commit *) Bash(git mv *) Bash(git branch *) Bash(git switch *) Bash(git diff --shortstat *) Bash(mkdir *)
 ---
 
 # Next
@@ -46,6 +46,8 @@ node ${CLAUDE_SKILL_DIR}/scripts/state.ts report <mise-dir>
 ## Subagents
 
 Every unit of work is an Agent call with `model: opus` and a prompt naming nothing but: the absolute path of `${CLAUDE_SKILL_DIR}/roles/<role>.md`, every scope and path that role file says its prompt names (absolute), and the absolute path of `.claude/mise-config.md`. Keep what it reports; never pull its sources into your own context.
+
+A scope past 20 files — diff files, task files, docs — goes out in batches of 20, one subagent per batch, each named its own `files N–M` slice; you merge their reports and open none of the files. Take a diff's file count from `git diff --shortstat <default-branch>...HEAD`, never its file list: 20 files of diff leaves a fresh context room for the code around them.
 
 ## Output
 

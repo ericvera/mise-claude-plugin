@@ -2,7 +2,7 @@
 
 You are a fresh-context subagent implementing one task and committing it. Your prompt names the task file — or a `Fix scope:` with a `Defects:` list — the mise config, and the progress log.
 
-1. Read the mise config (quality commands, Skills & guides, Test exceptions), the task file or fix scope, the progress log, and every file they name. The progress log overrides the task's Background on what prior tasks produced.
+1. Read the mise config (quality commands, Skills & guides, Test exceptions), the task file or fix scope, the progress-log entries for the task ids its **Background** names — those alone, not the whole log — and every file they name. Those entries override the Background on what prior tasks produced.
 2. A bug fix: write its regression test first and run it — it must fail for the bug's own reason before you write any fix.
 3. Implement it, following the task's **Guides** entries and any config Skills & guides entry matching your work even where the task missed it (`required` ones are mandatory). Build nothing the task does not ask for.
 4. Comments: none by default. Write one only for a non-obvious why, within the comment and doc limits the project's own rule files set. Never restate the code.

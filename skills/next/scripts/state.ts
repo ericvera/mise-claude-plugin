@@ -6,6 +6,10 @@
 // No hashes, no cascade: a broken or hand-edited state file is an error, never
 // rebuilt by inference.
 //
+// Every command's output is bounded: counts and one next task file, never a
+// list that grows with the run, because the driver re-runs `report` at every
+// step and keeps each result in its context.
+//
 // Commands (each prints JSON to stdout; failures print {error} and exit 1):
 //   report <dir> [--write]   in_flight, route, next_action, tasks, amendments;
 //                            --write initializes a fresh state file
@@ -14,6 +18,8 @@
 //   route <dir> quick|standard|full
 //   amend <dir> "<text>"     +1 amendment, reopens adherence and sweep, logs it
 //   log <dir> <json>         appends one timestamped ledger event
+//   tally <dir>…             counts archived ledgers by event, step and detail,
+//                            with the runs and projects each row spans
 
 import {
   appendFileSync,
@@ -233,6 +239,20 @@ function doneTaskIds(dir: string): string[] {
   return taskFileIds(join(dir, "tasks/done"))
 }
 
+// The path of one task's file, relative to the mise directory, so the driver
+// can open the next task without listing tasks/ or re-reading the task index.
+function taskFile(dir: string, id: string | undefined): string | null {
+  if (!id) return null
+
+  const tasks = join(dir, "tasks")
+
+  if (!existsSync(tasks)) return null
+
+  const name = readdirSync(tasks).find((f) => f.match(TASK_FILE)?.[1] === id)
+
+  return name ? join("tasks", name) : null
+}
+
 // The first step in order that is still open; execute is open exactly while the
 // task index holds ids that are not in tasks/done/.
 function nextAction(state: State, remaining: string[]): string {
@@ -253,17 +273,21 @@ function report(dir: string, rest: string[]): object {
 
   const { state, file } = loadState(dir)
   const ids = taskIndexIds(dir, state)
-  const tasks_done = doneTaskIds(dir).filter((id) => ids.includes(id))
-  const tasks_remaining = ids.filter((id) => !tasks_done.includes(id))
+  const done = doneTaskIds(dir).filter((id) => ids.includes(id))
+  const remaining = ids.filter((id) => !done.includes(id))
 
   if (rest.includes("--write") && file === "new") writeState(dir, state)
 
   return {
     in_flight: true,
     route: state.route,
-    next_action: nextAction(state, tasks_remaining),
-    tasks_done,
-    tasks_remaining,
+    next_action: nextAction(state, remaining),
+    tasks: {
+      done: done.length,
+      remaining: remaining.length,
+      next_id: remaining[0] ?? null,
+      next_file: taskFile(dir, remaining[0]),
+    },
     amendments: state.amendments,
   }
 }
@@ -357,6 +381,101 @@ function log(dir: string, rest: string[]): object {
   return appendLedger(dir, event)
 }
 
+// Fifty accumulated ledgers run to tens of thousands of lines, so the retro
+// never opens one: it reads these counts. Rows group on the fields that repeat
+// across runs; free text (reason, text, verbatim) is left out, since one row
+// per distinct wording would be the ledger again rather than an aggregate.
+const DETAIL = "role source category changed kind verdict command pass".split(
+  " ",
+)
+
+interface Row {
+  event: string
+  step: string | null
+  detail: string
+  count: number
+  runs: Set<string>
+  projects: Set<string>
+}
+
+function tally(dir: string, rest: string[]): object {
+  const dirs = [dir, ...rest]
+  const rows = new Map<string, Row>()
+  const projects = new Set<string>()
+  let ledgers = 0
+  let events = 0
+  let unreadable = 0
+
+  for (const d of dirs) {
+    if (!existsSync(d)) fail(`ledger directory not found: ${d}`)
+
+    for (const name of readdirSync(d).filter((f) => f.endsWith(".jsonl"))) {
+      ledgers += 1
+      projects.add(d)
+
+      for (const line of readFileSync(join(d, name), "utf8").split("\n")) {
+        if (!line.trim()) continue
+
+        let entry: Record<string, unknown>
+
+        try {
+          entry = JSON.parse(line)
+        } catch {
+          unreadable += 1
+          continue
+        }
+
+        if (!isObject(entry) || typeof entry.event !== "string") {
+          unreadable += 1
+          continue
+        }
+
+        events += 1
+
+        const step = typeof entry.step === "string" ? entry.step : null
+        const detail = DETAIL.filter((k) => entry[k] !== undefined)
+          .map((k) => `${k}=${String(entry[k]).slice(0, 24)}`)
+          .join(" ")
+        const key = [entry.event, step, detail].join("\u0000")
+        const row = rows.get(key) ?? {
+          event: entry.event,
+          step,
+          detail,
+          count: 0,
+          runs: new Set<string>(),
+          projects: new Set<string>(),
+        }
+
+        row.count += 1
+        row.runs.add(join(d, name))
+        row.projects.add(d)
+        rows.set(key, row)
+      }
+    }
+  }
+
+  const sorted = [...rows.values()].sort(
+    (a, b) => b.count - a.count || a.event.localeCompare(b.event),
+  )
+
+  return {
+    ledgers,
+    projects: projects.size,
+    events,
+    ...(unreadable ? { unreadable } : {}),
+    rows_total: sorted.length,
+    // 50 rows is already more issues than one retro table can act on.
+    rows: sorted.slice(0, 50).map((row) => ({
+      event: row.event,
+      step: row.step,
+      detail: row.detail,
+      count: row.count,
+      runs: row.runs.size,
+      projects: row.projects.size,
+    })),
+  }
+}
+
 type Command = (dir: string, rest: string[]) => object
 
 const COMMANDS: Record<string, Command | undefined> = {
@@ -365,12 +484,13 @@ const COMMANDS: Record<string, Command | undefined> = {
   route,
   amend,
   log,
+  tally,
 }
 
 const [cmd, dir, ...rest] = process.argv.slice(2)
 const command = COMMANDS[cmd ?? ""]
 
 if (!command || !dir)
-  fail("usage: state.ts <report|mark|route|amend|log> <mise-dir> [args]")
+  fail("usage: state.ts <report|mark|route|amend|log|tally> <dir> [args]")
 
 console.log(JSON.stringify(command(dir, rest), null, 2))

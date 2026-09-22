@@ -37,7 +37,7 @@ Optional — omit a section that does not apply. A body is inline values or a po
 - **Mock guidance** — product name, UI code root, look-and-feel notes.
 - **Test exceptions** — bulleted `condition — alternative verification` entries: matching work is verified that stated way instead of by a regression test.
 - **Skills & guides** — one entry per line, `name-or-path (skill|doc[, required]): when to use`; `required` means it must never be bypassed.
-- **Adherence** — one rule family per line, `- <family>: <examples file>[, glossary: <path>]`. The examples file holds the owner's verbatim past review notes for that family, grouped by sub-pattern, each with the code shape that drew the note. No section, no adherence step.
+- **Adherence** — one rule family per line, `- <family>: <examples file>[, glossary: <path>]`. The examples file holds the owner's verbatim past review notes for that family, grouped by sub-pattern, each with the code shape that drew the note; keep it under ~150 lines, because every adherence subagent reads it whole. No section, no adherence step.
 - **Ledger** — where run ledgers are kept after cleanup; default `.claude/mise-ledger/`.
 - **Backlog** — freeform instructions for fetching the top to-do items from an external tracker; read verbatim.
 - **Review notes** — freeform instructions for reading the owner's external review notes for the branch (e.g. its Delta Review notes file); read verbatim.

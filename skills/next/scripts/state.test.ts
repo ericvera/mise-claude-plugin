@@ -130,8 +130,7 @@ test("report: goals.md without a state file is a fresh start", () => {
     in_flight: true,
     route: "standard",
     next_action: "step:goals",
-    tasks_done: [],
-    tasks_remaining: [],
+    tasks: { done: 0, remaining: 0, next_id: null, next_file: null },
     amendments: 0,
   })
   assert.equal(existsSync(join(dir, ".workflow-state")), false)
@@ -193,19 +192,51 @@ test("report: the full step order ends at close", () => {
   assert.equal(ok("report", dir).next_action, "close")
 })
 
-test("report: the task index drives tasks_done and tasks_remaining", () => {
+test("report: the task index drives the task counts", () => {
   const dir = started({ "spec.md": SPEC })
   ok("mark", dir, "spec", "done")
 
   let report = ok("report", dir)
-  assert.deepEqual(report.tasks_done, [])
-  assert.deepEqual(report.tasks_remaining, ["01_01", "01_02"])
+  assert.deepEqual(report.tasks, {
+    done: 0,
+    remaining: 2,
+    next_id: "01_01",
+    next_file: null,
+  })
 
   markDone(dir, "01_02_build.md")
   markDone(dir, "09_09_superseded.md") // not in the index: ignored
   report = ok("report", dir)
-  assert.deepEqual(report.tasks_done, ["01_02"])
-  assert.deepEqual(report.tasks_remaining, ["01_01"])
+  assert.deepEqual(report.tasks, {
+    done: 1,
+    remaining: 1,
+    next_id: "01_01",
+    next_file: null,
+  })
+})
+
+// The report names the next task's file so the driver never lists tasks/ or
+// re-reads the spec's index to find it.
+test("report: next_file resolves the next task's file, done or not", () => {
+  const dir = started({
+    "spec.md": SPEC,
+    "tasks/01_01_setup.md": "# task",
+    "tasks/01_02_build.md": "# task",
+  })
+  ok("mark", dir, "spec", "done")
+
+  assert.equal(ok("report", dir).tasks.next_file, "tasks/01_01_setup.md")
+
+  markDone(dir, "01_01_setup.md")
+  rmSync(join(dir, "tasks", "01_01_setup.md"))
+
+  const report = ok("report", dir)
+  assert.deepEqual(report.tasks, {
+    done: 1,
+    remaining: 1,
+    next_id: "01_02",
+    next_file: "tasks/01_02_build.md",
+  })
 })
 
 test("report: only the Task index section supplies ids", () => {
@@ -215,7 +246,7 @@ test("report: only the Task index section supplies ids", () => {
   ok("mark", dir, "critic", "done")
 
   const report = ok("report", dir)
-  assert.deepEqual(report.tasks_remaining, [])
+  assert.equal(report.tasks.remaining, 0)
   assert.equal(report.next_action, "step:adherence")
 })
 
@@ -227,11 +258,11 @@ test("report: a skipped spec makes the work one implicit task", () => {
 
   let report = ok("report", dir)
   assert.equal(report.next_action, "step:execute")
-  assert.deepEqual(report.tasks_remaining, ["01_01"])
+  assert.equal(report.tasks.next_id, "01_01")
 
   markDone(dir, "01_01_only.md")
   report = ok("report", dir)
-  assert.deepEqual(report.tasks_done, ["01_01"])
+  assert.equal(report.tasks.done, 1)
   assert.equal(report.next_action, "step:adherence")
 })
 
@@ -250,8 +281,12 @@ test("report: with no spec, an added task file reopens execute", () => {
   place(dir, { "tasks/01_02_copy.md": "# task" })
 
   const report = ok("report", dir)
-  assert.deepEqual(report.tasks_done, ["01_01"])
-  assert.deepEqual(report.tasks_remaining, ["01_02"])
+  assert.deepEqual(report.tasks, {
+    done: 1,
+    remaining: 1,
+    next_id: "01_02",
+    next_file: "tasks/01_02_copy.md",
+  })
   assert.equal(report.next_action, "step:execute")
 })
 
@@ -440,6 +475,100 @@ test("log: the engine owns the timestamp", () => {
   const { error } = fails("log", dir, JSON.stringify({ event: "run", t: "x" }))
 
   assert.match(error, /timestamp is set by the engine/)
+})
+
+// --- tally ---------------------------------------------------------------------
+
+function jsonl(...entries: object[]): string {
+  return entries.map((entry) => JSON.stringify(entry)).join("\n") + "\n"
+}
+
+test("tally: counts archived ledgers by event, step and detail", () => {
+  const finding = { event: "finding", step: "execute", source: "reviewer" }
+  const one = miseDir({
+    "feat-a.jsonl": jsonl(
+      { ...finding, changed: true },
+      { ...finding, changed: true },
+      {
+        event: "skip",
+        step: "critic",
+        reason: "no spec, nothing hard to undo",
+      },
+    ),
+    "feat-b.jsonl": jsonl({ ...finding, changed: true }),
+    "notes.md": "not a ledger",
+  })
+  const two = miseDir({
+    "fix-c.jsonl": jsonl({
+      event: "skip",
+      step: "critic",
+      reason: "entirely different wording",
+    }),
+  })
+
+  const out = ok("tally", one, two)
+
+  assert.equal(out.ledgers, 3)
+  assert.equal(out.projects, 2)
+  assert.equal(out.events, 5)
+  assert.equal(out.rows_total, 2)
+  assert.deepEqual(out.rows[0], {
+    event: "finding",
+    step: "execute",
+    detail: "source=reviewer changed=true",
+    count: 3,
+    runs: 2,
+    projects: 1,
+  })
+  // Free text never splits a row: the two skips group on event and step alone.
+  assert.deepEqual(out.rows[1], {
+    event: "skip",
+    step: "critic",
+    detail: "",
+    count: 2,
+    runs: 2,
+    projects: 2,
+  })
+})
+
+test("tally: the row list is capped and the total reported", () => {
+  const spawns = Array.from({ length: 60 }, (_, i) => ({
+    event: "spawn",
+    role: `role-${String(i).padStart(2, "0")}`,
+  }))
+  const dir = miseDir({ "feat-a.jsonl": jsonl(...spawns, spawns[0]) })
+
+  const out = ok("tally", dir)
+
+  assert.equal(out.rows_total, 60)
+  assert.equal(out.rows.length, 50)
+  assert.equal(out.rows[0].count, 2) // the repeated row sorts first
+  assert.equal(out.rows[0].detail, "role=role-00")
+})
+
+test("tally: unreadable lines are counted, never fatal", () => {
+  const dir = miseDir({
+    "feat-a.jsonl": '{"event":"run"}\n{not json\n["run"]\n{"role":"critic"}\n',
+  })
+
+  const out = ok("tally", dir)
+
+  assert.equal(out.events, 1)
+  assert.equal(out.unreadable, 3)
+})
+
+test("tally: an empty directory and a missing one", () => {
+  assert.deepEqual(ok("tally", miseDir()), {
+    ledgers: 0,
+    projects: 0,
+    events: 0,
+    rows_total: 0,
+    rows: [],
+  })
+  assert.match(
+    fails("tally", miseDir(), "/nonexistent/ledgers").error,
+    /ledger directory not found/,
+  )
 })
 
 // --- broken state files are errors, never rebuilt ------------------------------

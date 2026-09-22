@@ -53,32 +53,32 @@ Spawn one `critic` per round over `spec.md` (plus `requirements.md` when present
 
 Skip when: never.
 
-Run the config's `Check` and `Unit tests` once before the first task; a failure there stops the run. No spec → write the run's one task file, `<mise-dir>/tasks/01_01_<slug>.md`, from `goals.md` in the spec step's task-file shape. Then, per task in `tasks_remaining`, in index order:
+Run the config's `Check` and `Unit tests` once before the first task; a failure there stops the run. No spec → write the run's one task file, `<mise-dir>/tasks/01_01_<slug>.md`, from `goals.md` in the spec step's task-file shape. Then, one task at a time, the file the report's `tasks.next_file` names:
 
 1. Spawn an `implementer` on the task file, with `<mise-dir>/progress.md` as its progress log. `blocked` → stop and relay it. `stuck` → one fresh implementer carrying the failure report; a second failure of either kind → stop.
-2. Review: the task index spans 3 or more modules → spawn a `reviewer` on this task's commits; otherwise one `reviewer` over the whole branch diff after the last task.
-3. Blocking findings → one fix round through an implementer (`Fix scope:` and `Defects:`), then re-review. At most 2 fix rounds, then stop and surface what is left.
+2. Review: the task index spans 3 or more modules → spawn a `reviewer` on this task's commits; otherwise `reviewer` batches over the whole branch diff after the last task.
+3. Blocking findings → one fix round through an implementer (`Fix scope:` and `Defects:`), then re-review the fix commits alone. At most 2 fix rounds, then stop and surface what is left.
 4. `git mv` the task file into `<mise-dir>/tasks/done/` and commit `mise: task <id> done`.
 
-`progress.md` carries one entry per task, written by the implementer.
+`progress.md` carries one entry per task, at most 3 lines — its heading and two bullets — written by the implementer; nothing else appends to it.
 
 ## adherence
 
 Skip when: the config has no `## Adherence` section.
 
-Spawn one `adherence` subagent per family listed there, each over the branch diff with that family's examples file, each writing its own section of `<mise-dir>/adherence.md`. Flagged rows → one fix round through an implementer for that family, then re-run that family; at most 2 rounds per family, then record what is still flagged and move on. `mark <mise-dir> adherence done`, commit.
+Spawn `adherence` subagents per family listed there, in batches over the branch diff, each with that family's examples file, each appending only its flagged rows to that family's section of `<mise-dir>/adherence.md`. Flagged rows → one fix round through an implementer for that family, then re-run that family over the flagged files alone; at most 2 rounds per family, then record what is still flagged and move on. `mark <mise-dir> adherence done`, commit.
 
 ## sweep
 
 Skip when: never.
 
-Spawn one `sweep` subagent over the branch diff with `goals.md` and `spec.md`. Fix items → one implementer, then re-run the sweep once. `mark <mise-dir> sweep done`, commit.
+Spawn one `sweep` subagent over the branch diff with `goals.md` and `spec.md`. Fix items → one implementer, then re-run the sweep once over the files it changed. `mark <mise-dir> sweep done`, commit.
 
 ## review
 
 Skip when: never.
 
-Write `<mise-dir>/review.md`: per task, what changed and how to verify it; the open assumptions from `goals.md` and `spec.md`; every amendment so far. Print at most 5 lines — what to look at, and where — and stop. The run waits here. Feedback arrives in chat, or in the notes the config's `## Review notes` section points at; read those whenever the owner says there are some.
+Write `<mise-dir>/review.md`: one line per task — what changed and how to verify it, the detail left in `progress.md` — then the open assumptions from `goals.md` and `spec.md` and the amendments so far, at most 60 lines in all, which is one sitting's reading; past that, one line per area instead of per task. Print at most 5 lines — what to look at, and where — and stop. The run waits here. Feedback arrives in chat, or in the notes the config's `## Review notes` section points at; read those whenever the owner says there are some.
 
 Handle each item by what it changes, and `log {"event":"feedback","verbatim":…,"step":…,"kind":…}` for each:
 
@@ -112,3 +112,5 @@ An owner statement that changes a decision already recorded in `goals.md` or `sp
 ```
 
 Then `amend <mise-dir> "<what changed>"` and re-answer the skip conditions it reopens. Only the affected work becomes new tasks — their task files written, and listed in the spec's `## Task index` where there is a spec — while finished tasks stay finished, and nothing is re-approved or sent back to the critic.
+
+Read `## Amendments` only when re-answering skip conditions and when writing `review.md`; elsewhere the report's `amendments` count is what you need.

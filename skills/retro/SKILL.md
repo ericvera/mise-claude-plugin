@@ -10,9 +10,9 @@ disable-model-invocation: true
 
 # Retro
 
-Read every `.jsonl` ledger under the Ledger location named in `.claude/mise-config.md` (default `.claude/mise-ledger/`), plus any directory given as an argument. You edit no source, rule or plugin file, here or after: you output one table and stop.
+Run `node ${CLAUDE_SKILL_DIR}/../next/scripts/state.ts tally <dir>…` over the Ledger location named in `.claude/mise-config.md` (default `.claude/mise-ledger/`) and any directory given as an argument. Its rows are your input: never open a ledger yourself, they run to thousands of lines. You edit no source, rule or plugin file, here or after: you output one table and stop.
 
-Group the `finding`, `feedback`, `stop`, `skip` and `gate` events into issues by what actually went wrong, counting the runs and projects each issue spans.
+Group the `finding`, `feedback`, `stop`, `skip` and `gate` rows into issues by what actually went wrong; each row already carries the runs and projects it spans.
 
 **Eligible**: an issue seen in 3 or more runs, or in 2 or more projects. An issue whose harm is irreversible — data loss, a destructive command, money — is eligible after one. Everything else is logged only; say how many runs short it is.
 
