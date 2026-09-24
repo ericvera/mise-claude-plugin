@@ -1,75 +1,59 @@
 #!/usr/bin/env node
-// State engine for the `next` workflow skill.
+// State engine for the `next` workflow skill (mise v3).
 //
-// The single reader/writer of `.workflow-state` files. Requires Node >= 24,
-// which executes TypeScript directly: `node state.ts <cmd> <mise-dir> ...`.
-// <mise-dir> is the workflow's single working directory from the config.
-// Human-readable spec: ../../../docs/state-machine.md
+// Single reader/writer of `.mise/.workflow-state`. Node >= 24 runs it
+// directly as `node state.ts <cmd>`.
+// A state file that breaks the schema is an error, never rebuilt by inference.
 //
-// Commands (all print a JSON report to stdout):
-//   report  <mise-dir> [--write]        is work in flight (in_flight:
-//                                       true | false)? If so: verify recorded
-//                                       approval hashes, apply the mismatch
-//                                       cascade, compute next_action.
-//                                       Read-only unless --write.
-//   approve <mise-dir> goals route=<r>  hash the stage artifact and record the
-//   approve <mise-dir> <other-stage>    approval; goals also records the route
-//                                       (full | direct | bugfix). A changed
-//                                       re-approval deletes every later
-//                                       stage's approval; a plan approval
-//                                       whose hash doesn't match the recorded
-//                                       one also clears the done/ directory.
-//   approve <mise-dir> acceptance       record the user's acceptance
-//                                       confirmation, hashed over every route
-//                                       stage's artifact plus the done/
-//                                       listing — any later doc or task
-//                                       change makes it stale, and an
-//                                       observed mismatch or changed approval
-//                                       deletes it outright, so the
-//                                       acceptance pass re-runs.
+// Every command's output stays small, with counts, one next task file and one
+// slice per 20 files of diff, because the driver re-runs `report` at every
+// step and keeps each result in its context.
 //
-// A task is done exactly when its file has been moved to
-// <mise-dir>/implementation_plan/done/ — completion is read straight from the
-// filesystem. A broken or unexpectedly missing state file is an error, never
-// rebuilt by inference: the caller restores it from the last `mise:`
-// checkpoint commit (every state change is committed) or deletes the mise
-// directory and starts the work over.
+// Commands (each prints JSON to stdout, and a failure prints {error} and exits 1):
+//   report <dir> [--write]   in_flight, next_action, step_file, base, tasks, checks,
+//                            amendments. --write initializes a fresh state file
+//   mark <dir> <step> done|skipped
+//   unskip <dir> <step>      a skipped step runs after all
+//   fix <dir>                spends a fix round, so the next checks cover its commits
+//   amend <dir> [--critic]   +1 amendment, reopens execute (and review, and
+//                            with --critic the critic)
+//   push <dir>               force-pushes the branch with lease, never main,
+//                            master or origin's default branch
 
-import {
-  existsSync,
-  readFileSync,
-  readdirSync,
-  rmSync,
-  writeFileSync,
-} from "node:fs"
-import { createHash } from "node:crypto"
-import { join } from "node:path"
+import { execFileSync } from "node:child_process"
+import { existsSync, readFileSync, readdirSync, writeFileSync } from "node:fs"
+import { dirname, join, resolve } from "node:path"
 
-type Stage = "goals" | "mock" | "requirements" | "plan"
-type Route = "full" | "direct" | "bugfix"
-
-const STAGES: Stage[] = ["goals", "mock", "requirements", "plan"]
-const ROUTES: Route[] = ["full", "direct", "bugfix"]
-
-const ARTIFACTS: Record<Stage, string[]> = {
-  goals: ["goals.md"],
-  mock: ["mocks.html", "mocks.context.md"],
-  requirements: ["requirements.md"],
-  plan: ["implementation_plan/00_overview.md"],
-}
+type StepState = "done" | "skipped" | null
 
 interface State {
-  route?: Route
-  approved: Partial<Record<Stage, string>>
-  accepted?: string
+  version: 3
+  started: string
+  base: string
+  steps: Record<string, StepState>
+  amendments: number
+  checks_from: string | null
+  fix_rounds: number
 }
 
-const TASK_FILE = /^(\d{2}_\d{2})_.*\.md$/
-const SHA1_HEX = /^[0-9a-f]{40}$/
+const STEPS = "goals spec critic execute review gate".split(" ")
+const NEVER_SKIPPED = "goals execute review gate".split(" ")
+const ORDER = ["start", ...STEPS, "close"]
+const FIELDS =
+  "version started base steps amendments checks_from fix_rounds".split(" ")
+
+const FIX_ROUNDS = 2
+const SLICE = 20
+const SHA = /^[0-9a-f]{40,64}$/
+
+// A task file's name is its NN_MM id, a slug, then `.md`. In an index row it is a
+// whole word, never the tail of a path the row lists among the files touched.
+const TASK_FILE = /^\d{2}_\d{2}_[^\s`|/]*\.md$/
+const TASK_REF = /(?:^|[\s`|(\[])(\d{2}_\d{2}_[^\s`|/()[\]]*\.md)/
 
 const BROKEN_HINT =
   "restore .workflow-state from the last `mise:` checkpoint commit " +
-  "(e.g. `git checkout <mise-directory>/.workflow-state`), or delete the " +
+  "(e.g. `git checkout .mise/.workflow-state`), or delete the " +
   "mise directory to abandon the work and start over"
 
 function fail(message: string): never {
@@ -77,42 +61,57 @@ function fail(message: string): never {
   process.exit(1)
 }
 
-// Which stages participate, by route. Route unset behaves like direct — it
-// only lasts until the goals approval, which always records the route.
-function stageOrder(route?: string): Stage[] {
-  if (route === "full") {
-    return STAGES
-  }
-
-  if (route === "bugfix") {
-    return ["goals", "plan"]
-  }
-
-  return STAGES.filter((s) => s !== "mock")
+function isObject(value: unknown): boolean {
+  return typeof value === "object" && value !== null && !Array.isArray(value)
 }
 
-// SHA-1 of the artifact bytes; for multi-file stages, of the concatenation in
-// ARTIFACTS order (equivalent to `cat <files> | shasum`). Null if any file is
-// missing — a missing artifact is a mismatch, never a shell error.
-function hashStage(dir: string, stage: Stage): string | null {
-  const bufs: Buffer[] = []
-
-  for (const f of ARTIFACTS[stage]) {
-    const p = join(dir, f)
-
-    if (!existsSync(p)) {
-      return null
-    }
-
-    bufs.push(readFileSync(p))
-  }
-
-  return createHash("sha1").update(Buffer.concat(bufs)).digest("hex")
+function emptySteps(): Record<string, StepState> {
+  return Object.fromEntries(STEPS.map((step) => [step, null]))
 }
 
-// Strict parse: the engine is the only writer, so any semantic deviation
-// means the file was edited by hand or written by an older engine — it is
-// reported broken and restored from git, never repaired by inference.
+function freshState(dir: string): State {
+  return {
+    version: 3,
+    started: new Date().toISOString(),
+    base: defaultBranch(dir),
+    steps: emptySteps(),
+    amendments: 0,
+    checks_from: null,
+    fix_rounds: 0,
+  }
+}
+
+// Git runs in the repository that holds the mise directory.
+function git(dir: string, args: string[], failure?: string): string {
+  try {
+    return execFileSync("git", args, {
+      cwd: dirname(resolve(dir)),
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "pipe"],
+    }).trim()
+  } catch (error) {
+    const lines = String((error as { stderr?: unknown }).stderr ?? "")
+      .split("\n")
+      .filter(Boolean)
+    const reason = lines.find((l) => /error|fatal|rejected/.test(l)) ?? lines[0]
+
+    fail(failure ?? `git ${args.join(" ")} failed: ${reason}`)
+  }
+}
+
+// The branch the work merges into, recorded once so no step guesses it.
+function defaultBranch(dir: string): string {
+  const ref = git(
+    dir,
+    ["symbolic-ref", "--short", "refs/remotes/origin/HEAD"],
+    "origin/HEAD is not set — run `git remote set-head origin --auto`",
+  )
+
+  return ref.replace(/^origin\//, "")
+}
+
+// The engine is the only writer, so any deviation is a hand edit or another
+// version's file, reported broken rather than repaired by inference.
 function parseState(text: string): { state?: State; problems: string[] } {
   let data: unknown
 
@@ -122,480 +121,431 @@ function parseState(text: string): { state?: State; problems: string[] } {
     return { problems: ["state file is not valid JSON"] }
   }
 
-  if (typeof data !== "object" || data === null || Array.isArray(data)) {
-    return { problems: ["state file is not a JSON object"] }
-  }
+  if (!isObject(data)) return { problems: ["state file is not a JSON object"] }
 
+  const r = data as Record<string, unknown>
   const problems: string[] = []
-  const record = data as Record<string, unknown>
+  const steps = emptySteps()
 
-  for (const key of Object.keys(record)) {
-    if (key !== "route" && key !== "approved" && key !== "accepted") {
-      problems.push(`unknown field "${key}"`)
+  for (const key of Object.keys(r))
+    if (!FIELDS.includes(key)) problems.push(`unknown field "${key}"`)
+
+  for (const key of FIELDS)
+    if (!(key in r)) problems.push(`missing field "${key}"`)
+
+  if (r.version !== 3) problems.push(`unsupported version ${str(r.version)}`)
+
+  if (typeof r.started !== "string" || Number.isNaN(Date.parse(r.started)))
+    problems.push("invalid started timestamp")
+
+  if (typeof r.base !== "string" || !r.base) problems.push("invalid base")
+
+  if (!Number.isInteger(r.amendments) || (r.amendments as number) < 0)
+    problems.push("invalid amendments count")
+
+  if (
+    r.checks_from !== null &&
+    (typeof r.checks_from !== "string" || !SHA.test(r.checks_from))
+  )
+    problems.push("invalid checks_from")
+
+  if (
+    !Number.isInteger(r.fix_rounds) ||
+    (r.fix_rounds as number) < 0 ||
+    (r.fix_rounds as number) > FIX_ROUNDS
+  )
+    problems.push("invalid fix_rounds")
+
+  if (!isObject(r.steps)) problems.push("steps is not an object")
+  else
+    for (const [key, value] of Object.entries(r.steps as object)) {
+      if (!STEPS.includes(key)) problems.push(`unknown step "${key}" in steps`)
+      else if (value === null) continue
+      else if (NEVER_SKIPPED.includes(key) && value === "skipped")
+        problems.push(`steps.${key} is never skipped`)
+      else if (value === "done" || value === "skipped") steps[key] = value
+      else problems.push(`invalid value for steps.${key}`)
     }
+
+  if (problems.length) return { problems }
+
+  return {
+    state: {
+      version: 3,
+      started: r.started as string,
+      base: r.base as string,
+      steps,
+      amendments: r.amendments as number,
+      checks_from: r.checks_from as string | null,
+      fix_rounds: r.fix_rounds as number,
+    },
+    problems: [],
   }
-
-  if ("route" in record && !ROUTES.includes(record.route as Route)) {
-    problems.push(`invalid route "${String(record.route)}"`)
-  }
-
-  const state: State = { approved: {} }
-
-  if (ROUTES.includes(record.route as Route)) {
-    state.route = record.route as Route
-  }
-
-  if ("approved" in record) {
-    const approved = record.approved
-
-    if (
-      typeof approved !== "object" ||
-      approved === null ||
-      Array.isArray(approved)
-    ) {
-      problems.push("approved is not an object")
-    } else {
-      for (const [key, value] of Object.entries(approved)) {
-        if (!STAGES.includes(key as Stage)) {
-          problems.push(`unknown stage "${key}" in approved`)
-        } else if (typeof value !== "string" || !SHA1_HEX.test(value)) {
-          problems.push(`invalid hash for approved.${key}`)
-        } else {
-          state.approved[key as Stage] = value
-        }
-      }
-    }
-  }
-
-  if ("accepted" in record) {
-    if (
-      typeof record.accepted !== "string" ||
-      !SHA1_HEX.test(record.accepted)
-    ) {
-      problems.push("invalid accepted hash")
-    } else {
-      state.accepted = record.accepted
-    }
-  }
-
-  if (state.approved.goals && !state.route) {
-    problems.push("goals approval recorded without a route")
-  }
-
-  if (state.accepted && !state.approved.goals) {
-    problems.push("accepted recorded without approvals")
-  }
-
-  return problems.length ? { problems } : { state, problems: [] }
 }
 
-function serializeState(state: State): string {
-  const approved: Partial<Record<Stage, string>> = {}
-
-  for (const s of STAGES) {
-    if (state.approved[s]) {
-      approved[s] = state.approved[s]
-    }
-  }
-
-  const out = {
-    ...(state.route ? { route: state.route } : {}),
-    ...(Object.keys(approved).length ? { approved } : {}),
-    ...(state.accepted ? { accepted: state.accepted } : {}),
-  }
-
-  return JSON.stringify(out, null, 2) + "\n"
+function str(value: unknown): string {
+  return JSON.stringify(value) ?? "undefined"
 }
 
-// IDs are the exact leading NN_NN of filenames listed in the Task Index of
-// 00_overview.md, in order of first appearance. Literal comparison only.
-function taskIndexIds(dir: string): string[] {
-  const p = join(dir, "implementation_plan/00_overview.md")
-
-  if (!existsSync(p)) {
-    return []
-  }
-
-  const ids: string[] = []
-  const matches = readFileSync(p, "utf8").matchAll(/`(\d{2}_\d{2})_[^`]*\.md`/g)
-
-  for (const m of matches) {
-    if (!ids.includes(m[1])) {
-      ids.push(m[1])
-    }
-  }
-
-  return ids
-}
-
-// A task is complete exactly when its file sits in
-// implementation_plan/done/. IDs come from the filenames.
-function doneTaskIds(dir: string): string[] {
-  const done = join(dir, "implementation_plan/done")
-
-  if (!existsSync(done)) {
-    return []
-  }
-
-  const ids: string[] = []
-
-  for (const f of readdirSync(done)) {
-    const m = f.match(TASK_FILE)
-
-    if (m && !ids.includes(m[1])) {
-      ids.push(m[1])
-    }
-  }
-
-  return ids
-}
-
-// Acceptance is recorded over everything it verified: each route stage's
-// artifact hash plus the sorted done/ filenames. Any later doc edit or task
-// change makes the recorded value stale, so a confirmed acceptance can never
-// survive the work changing underneath it. Null while any artifact is missing.
-function hashAcceptance(dir: string, route?: string): string | null {
-  const h = createHash("sha1")
-
-  for (const stage of stageOrder(route)) {
-    const stageHash = hashStage(dir, stage)
-
-    if (!stageHash) {
-      return null
-    }
-
-    h.update(stageHash)
-  }
-
-  const done = join(dir, "implementation_plan/done")
-  const names = existsSync(done)
-    ? readdirSync(done)
-        .filter((f) => TASK_FILE.test(f))
-        .sort()
-    : []
-
-  return h.update("\0" + names.join("\0")).digest("hex")
-}
-
-function loadState(dir: string): { state: State; file: "ok" | "new" } {
-  if (!existsSync(dir)) {
-    fail(`mise directory not found: ${dir}`)
-  }
+// Only `report` sees a run the state file does not hold yet. Every other
+// command needs the run opened by `report --write`.
+function loadState(
+  dir: string,
+  fresh = false,
+): { state: State; file: "ok" | "new" } {
+  if (!existsSync(dir)) fail(`mise directory not found: ${dir}`)
 
   const statePath = join(dir, ".workflow-state")
 
+  // A fresh start has at most goals.md. A spec or task files without a state
+  // file mean the file was lost, an error rather than a new run.
   if (!existsSync(statePath)) {
-    // Fresh start: only goals.md (at most) exists — initialize empty state.
-    // Later-stage artifacts without a state file mean the file was lost.
-    const laterEvidence =
-      STAGES.filter((s) => s !== "goals").some((s) =>
-        ARTIFACTS[s].some((f) => existsSync(join(dir, f))),
-      ) || existsSync(join(dir, "implementation_plan"))
+    if (existsSync(join(dir, "spec.md")) || existsSync(join(dir, "tasks")))
+      fail(`state file missing but workflow artifacts exist — ${BROKEN_HINT}`)
 
-    if (laterEvidence) {
-      fail(`state file missing but stage artifacts exist — ${BROKEN_HINT}`)
-    }
+    if (!fresh) fail("no run is open — open it with `report .mise --write`")
 
-    return { state: { approved: {} }, file: "new" }
+    return { state: freshState(dir), file: "new" }
   }
 
   const { state, problems } = parseState(readFileSync(statePath, "utf8"))
 
-  if (!state) {
+  if (!state)
     fail(`state file is broken (${problems.join("; ")}) — ${BROKEN_HINT}`)
-  }
 
   return { state, file: "ok" }
 }
 
 function writeState(dir: string, state: State): void {
-  writeFileSync(join(dir, ".workflow-state"), serializeState(state))
+  const path = join(dir, ".workflow-state")
+  writeFileSync(path, JSON.stringify(state, null, 2) + "\n")
 }
 
-// in_flight: work is in flight exactly when the mise directory exists with content —
-// a missing or empty directory means none, and nothing further to report on.
-function report(dir: string, write: boolean): object {
-  if (!existsSync(dir) || readdirSync(dir).length === 0) {
-    return { in_flight: false }
+// The task files sitting directly in one directory, sorted.
+function taskFiles(dir: string): string[] {
+  if (!existsSync(dir)) return []
+
+  return readdirSync(dir)
+    .filter((file) => TASK_FILE.test(file))
+    .sort()
+}
+
+// The task files spec.md's `## Task index` names, one per row, in row order.
+function indexedFiles(dir: string): string[] {
+  const spec = join(dir, "spec.md")
+
+  if (!existsSync(spec)) return []
+
+  const section = readFileSync(spec, "utf8")
+    .split(/^##\s+/m)
+    .find((part) => /^Task index/i.test(part))
+  const files: string[] = []
+
+  for (const line of section?.split("\n") ?? []) {
+    const file = line.match(TASK_REF)?.[1]
+
+    if (file && !files.includes(file)) files.push(file)
   }
 
-  const { state, file } = loadState(dir)
-  const order = stageOrder(state.route)
+  return files
+}
 
-  const stages: Record<
-    string,
-    { verdict: string; recorded?: string; current?: string }
-  > = {}
+interface Progress {
+  done: number
+  remaining: string[]
+  next: { id: string; file: string | null } | null
+}
 
-  let mismatchAt = -1
+// A task is done exactly when its file sits in tasks/done/, never by a mark.
+// With a spec the tasks are the files its index names, and a done file it does
+// not name is ignored. With no spec the task files are the tasks, starting at
+// one implicit task whose file execute writes.
+function taskProgress(dir: string, state: State): Progress {
+  const open = taskFiles(join(dir, "tasks"))
+  const finished = taskFiles(join(dir, "tasks/done"))
+  const id = (file: string) => file.slice(0, 5)
+  const reused = open.find((file) => finished.some((f) => id(f) === id(file)))
 
-  order.forEach((stage, i) => {
-    const recorded = state.approved[stage]
-    const current = hashStage(dir, stage) ?? undefined
+  if (reused)
+    fail(
+      `task ${id(reused)} is in both tasks/ and tasks/done/ — renumber the new one`,
+    )
 
-    let verdict: "approved" | "unapproved" | "mismatch"
+  let files: string[]
 
-    if (!recorded) {
-      verdict = "unapproved"
-    } else if (current === recorded) {
-      verdict = "approved"
-    } else {
-      verdict = "mismatch"
-    }
+  if (state.steps.spec === "skipped") {
+    files = [...open, ...finished].sort()
 
-    if (verdict === "mismatch" && mismatchAt < 0) {
-      mismatchAt = i
-    }
-
-    stages[stage] = { verdict, recorded, current }
-  })
-
-  // Only a mismatch cascades: the doc changed after approval, so every LATER
-  // approval was reviewed against a stale doc. The mismatched stage keeps its
-  // own stale entry (its gate uses it to detect a changed re-approval).
-  const reopened: Stage[] = []
-
-  if (mismatchAt >= 0) {
-    for (const stage of order.slice(mismatchAt + 1)) {
-      if (state.approved[stage]) {
-        delete state.approved[stage]
-        stages[stage].verdict = "unapproved"
-        delete stages[stage].recorded
-        reopened.push(stage)
+    if (!files.length)
+      return {
+        done: 0,
+        remaining: ["01_01"],
+        next: { id: "01_01", file: null },
       }
-    }
-  }
-
-  // A mismatch also invalidates any recorded acceptance: it was confirmed
-  // against the doc that just changed. Deleting the record — rather than
-  // trusting the composite hash alone — keeps a later revert of the doc to
-  // its approved bytes from resurrecting an acceptance for re-executed work.
-  let accepted_cleared = false
-
-  if (mismatchAt >= 0 && state.accepted) {
-    delete state.accepted
-    accepted_cleared = true
-  }
-
-  let next_action: string
-  let task_index_ids: string[] | null = null
-  let tasks_done: string[] = []
-  let tasks_remaining: string[] = []
-
-  const nextStage = order.find((s) => stages[s].verdict !== "approved")
-
-  if (nextStage) {
-    next_action = `stage:${nextStage}`
   } else {
-    task_index_ids = taskIndexIds(dir)
-    tasks_done = doneTaskIds(dir).filter((t) => task_index_ids!.includes(t))
-    tasks_remaining = task_index_ids.filter((t) => !tasks_done.includes(t))
+    files = indexedFiles(dir)
 
-    if (task_index_ids.length && tasks_remaining.length === 0) {
-      next_action =
-        state.accepted && state.accepted === hashAcceptance(dir, state.route)
-          ? "close_out"
-          : "acceptance"
-    } else {
-      next_action = "stage:execute"
+    if (state.steps.spec === "done") {
+      if (!files.length)
+        fail("spec.md's ## Task index names no task file (NN_MM_<slug>.md)")
+
+      const missing = files.filter(
+        (file) => !open.includes(file) && !finished.includes(file),
+      )
+
+      if (missing.length)
+        fail(`the Task index lists ${missing.join(", ")} with no such file`)
+
+      const unlisted = open.find((file) => !files.includes(file))
+
+      if (unlisted) fail(`tasks/${unlisted} is not in the Task index`)
     }
   }
 
-  const dirty = file === "new" || reopened.length > 0 || accepted_cleared
+  const remaining = files.filter((file) => !finished.includes(file))
+  const first = remaining[0]
 
-  if (write && dirty) {
+  return {
+    done: files.length - remaining.length,
+    remaining: remaining.map(id),
+    next: first ? { id: id(first), file: join(dir, "tasks", first) } : null,
+  }
+}
+
+// The first step in order that is still open. Execute stays open while tasks
+// remain, and after the last one until its checks mark it done.
+function nextAction(state: State, remaining: string[]): string {
+  for (const step of STEPS) {
+    if (step === "execute") {
+      if (remaining.length || state.steps.execute !== "done")
+        return "step:execute"
+    } else if (state.steps[step] === null) return `step:${step}`
+  }
+
+  return "close"
+}
+
+// The work no round has checked yet, sliced 20 files at a time. That is the
+// whole branch against the latest fetched base, then only what the last fix
+// round or amendment committed.
+function checks(dir: string, state: State): object {
+  const range = state.checks_from
+    ? `${state.checks_from}..HEAD`
+    : `origin/${state.base}...HEAD`
+  const files = git(dir, ["diff", "--name-only", range, "--", ".", ":!.mise"])
+  const count = files ? files.split("\n").length : 0
+  const slices: string[] = []
+
+  for (let first = 1; first <= count; first += SLICE)
+    slices.push(`${first}–${Math.min(first + SLICE - 1, count)}`)
+
+  return { range, slices, fix_rounds_left: FIX_ROUNDS - state.fix_rounds }
+}
+
+// The file the driver reads for a step, numbered by the step's place in the run.
+function stepFile(step: string): string {
+  const n = String(ORDER.indexOf(step) + 1).padStart(2, "0")
+
+  return join(import.meta.dirname, "..", "steps", `${n}-${step}.md`)
+}
+
+// Work is in flight exactly when the mise directory exists with content.
+function report(dir: string, rest: string[]): object {
+  if (rest.some((arg) => arg !== "--write"))
+    fail("usage: state.ts report .mise [--write]")
+
+  if (!existsSync(dir) || readdirSync(dir).length === 0)
+    return { in_flight: false }
+
+  const { state, file } = loadState(dir, true)
+  const { done, remaining, next } = taskProgress(dir, state)
+
+  // New tasks after execute closed reopen it even when `amend` never ran, so
+  // their checks and the owner's review are never skipped.
+  if (file === "ok" && state.steps.execute === "done" && remaining.length) {
+    reopen(dir, state)
     writeState(dir, state)
   }
 
+  const next_action = nextAction(state, remaining)
+
+  if (rest.includes("--write") && file === "new") writeState(dir, state)
+
   return {
     in_flight: true,
-    file,
-    route: state.route ?? null,
-    stages,
-    ...(reopened.length ? { reopened } : {}),
-    ...(accepted_cleared ? { accepted_cleared } : {}),
-    ...(task_index_ids ? { task_index_ids, tasks_done, tasks_remaining } : {}),
     next_action,
-    wrote: write && dirty,
-    ...(!write && dirty ? { pending_writes: true } : {}),
+    step_file: stepFile(next_action.replace(/^step:/, "")),
+    base: state.base,
+    tasks: {
+      done,
+      remaining: remaining.length,
+      next_id: next?.id ?? null,
+      next_file: next?.file ?? null,
+    },
+    checks:
+      next_action === "step:execute" && !remaining.length
+        ? checks(dir, state)
+        : null,
+    amendments: state.amendments,
   }
 }
 
-function approve(dir: string, stage: Stage, route?: string): object {
+function mark(dir: string, rest: string[]): object {
+  const [step, value] = rest
+
+  if (!STEPS.includes(step))
+    fail(`expected a step (${STEPS.join(", ")}), got ${str(step)}`)
+
+  if (value !== "done" && value !== "skipped")
+    fail(`expected done|skipped, got ${str(value)}`)
+
+  if (NEVER_SKIPPED.includes(step) && value === "skipped")
+    fail(`${step} is never skipped`)
+
+  if (rest.length > 2) fail("usage: state.ts mark .mise <step> done|skipped")
+
   const { state } = loadState(dir)
 
-  if (stage === "goals") {
-    if (!ROUTES.includes(route as Route)) {
-      fail(
-        `approving goals requires route=<${ROUTES.join("|")}>, got "${route ?? ""}"`,
-      )
-    }
+  state.steps[step] = value
 
-    state.route = route as Route
-  } else if (route) {
-    fail(`route accompanies only the goals approval, not ${stage}`)
-  }
+  // Checked against the state as marked, so `spec done` validates the index.
+  const { remaining } = taskProgress(dir, state)
 
-  const current = hashStage(dir, stage)
+  if (step === "execute" && remaining.length)
+    fail(`execute has ${remaining.length} task(s) left, next ${remaining[0]}`)
 
-  if (!current) {
-    fail(
-      `cannot approve ${stage}: artifact missing (${ARTIFACTS[stage].join(", ")})`,
-    )
-  }
-
-  if (!stageOrder(state.route).includes(stage)) {
-    fail(
-      `stage ${stage} not in this feature's route (${state.route ?? "unset"})`,
-    )
-  }
-
-  const previous = state.approved[stage]
-  const changed = Boolean(previous && previous !== current)
-
-  state.approved[stage] = current
-
-  const reopened: Stage[] = []
-
-  if (changed) {
-    const order = stageOrder(state.route)
-
-    for (const later of order.slice(order.indexOf(stage) + 1)) {
-      if (state.approved[later]) {
-        delete state.approved[later]
-        reopened.push(later)
-      }
-    }
-  }
-
-  // done/ is scoped to one approved plan version: it survives only
-  // an approval whose hash matches the recorded one (a resume of the same
-  // plan). Any other plan approval — changed, or re-approved after a cascade
-  // dropped the entry — starts execution over; the revision planned the
-  // remaining work from the repo, and git keeps the moved files' history.
-  let cleared_done: string[] = []
-
-  if (stage === "plan" && previous !== current) {
-    cleared_done = doneTaskIds(dir)
-
-    if (cleared_done.length) {
-      rmSync(join(dir, "implementation_plan/done"), { recursive: true })
-    }
-  }
-
-  // An approval recording a different hash than before — a changed
-  // re-approval, or a first approval after a cascade dropped the entry —
-  // re-gates a doc the acceptance was confirmed against: drop the record so
-  // a byte-identical revert can't resurrect it.
-  const accepted_cleared = Boolean(state.accepted && previous !== current)
-
-  if (accepted_cleared) {
-    delete state.accepted
-  }
+  // A fix round or amendment that has committed nothing has not run yet.
+  if (
+    step === "execute" &&
+    state.checks_from &&
+    state.checks_from === git(dir, ["rev-parse", "HEAD"])
+  )
+    fail("the last fix round or amendment has committed nothing yet")
 
   writeState(dir, state)
 
-  return {
-    approved: stage,
-    hash: current,
-    ...(stage === "goals" ? { route: state.route } : {}),
-    changed_reapproval: changed,
-    ...(reopened.length ? { reopened } : {}),
-    ...(cleared_done.length ? { cleared_done } : {}),
-    ...(accepted_cleared ? { accepted_cleared } : {}),
-  }
+  return { step, state: value }
 }
 
-// The confirmation record for the acceptance pass: valid only while every
-// route stage is validly approved and every Task Index ID is done — the same
-// conditions under which report says `acceptance`.
-function approveAcceptance(dir: string): object {
+// An amendment can make a skip condition false, so the skipped step runs in
+// its turn. Only a skip is undone, never a done step.
+function unskip(dir: string, rest: string[]): object {
+  const [step] = rest
+
+  if (!STEPS.includes(step))
+    fail(`expected a step (${STEPS.join(", ")}), got ${str(step)}`)
+
+  if (rest.length > 1) fail("usage: state.ts unskip .mise <step>")
+
   const { state } = loadState(dir)
 
-  const unapproved = stageOrder(state.route).filter(
-    (s) => !state.approved[s] || state.approved[s] !== hashStage(dir, s),
-  )
+  if (state.steps[step] !== "skipped") fail(`${step} is not skipped`)
 
-  if (unapproved.length) {
-    fail(
-      `cannot approve acceptance: stages not validly approved (${unapproved.join(", ")})`,
-    )
-  }
-
-  const ids = taskIndexIds(dir)
-  const done = doneTaskIds(dir)
-  const remaining = ids.filter((t) => !done.includes(t))
-
-  if (!ids.length || remaining.length) {
-    fail(
-      ids.length
-        ? `cannot approve acceptance: tasks remaining (${remaining.join(", ")})`
-        : "cannot approve acceptance: the plan overview has no Task Index",
-    )
-  }
-
-  // Non-null: every stage just hashed successfully above.
-  const current = hashAcceptance(dir, state.route)!
-
-  state.accepted = current
+  state.steps[step] = null
   writeState(dir, state)
 
-  return { approved: "acceptance", hash: current }
+  return { step, state: null }
 }
 
-function asStage(value: string | undefined): Stage {
-  if (!value || !STAGES.includes(value as Stage)) {
-    fail(
-      `expected a stage (${STAGES.join(", ")}, acceptance), got "${value ?? ""}"`,
-    )
+// The next round of checks covers only what this fix round commits.
+function fix(dir: string, rest: string[]): object {
+  if (rest.length) fail("usage: state.ts fix .mise")
+
+  const { state } = loadState(dir)
+
+  if (state.fix_rounds >= FIX_ROUNDS)
+    fail(`all ${FIX_ROUNDS} fix rounds are spent`)
+
+  state.fix_rounds += 1
+  state.checks_from = git(dir, ["rev-parse", "HEAD"])
+  writeState(dir, state)
+
+  return { fix_rounds_left: FIX_ROUNDS - state.fix_rounds }
+}
+
+// An amendment changes a recorded decision, so its tasks run through execute
+// and the owner reviews them. --critic sends them through the critic first.
+function amend(dir: string, rest: string[]): object {
+  if (rest.some((arg) => arg !== "--critic"))
+    fail("usage: state.ts amend .mise [--critic]")
+
+  const { state } = loadState(dir)
+  const critic = rest.includes("--critic")
+
+  if (critic && state.steps.spec !== "done")
+    fail("--critic needs a written spec — unskip spec and critic instead")
+
+  const reopened = reopen(dir, state)
+
+  if (critic) {
+    state.steps.critic = null
+    reopened.unshift("critic")
   }
 
-  return value as Stage
+  state.amendments += 1
+  writeState(dir, state)
+
+  return { amendments: state.amendments, reopened }
 }
 
-const nodeMajor = Number(process.versions.node.split(".")[0])
+// Reopens execute, and review once the owner has closed it. When execute had
+// closed, the next checks cover only what commits from here on, with fresh fix
+// rounds. While it is still open, the round under way takes the new tasks in.
+function reopen(dir: string, state: State): string[] {
+  const reopened = ["execute"]
 
-if (nodeMajor < 24) {
-  fail(
-    `Node ${process.versions.node} is too old — the mise state engine requires Node >= 24`,
-  )
+  if (state.steps.review === "done") reopened.push("review")
+
+  if (state.steps.execute === "done") {
+    state.checks_from = git(dir, ["rev-parse", "HEAD"])
+    state.fix_rounds = 0
+  }
+
+  for (const step of reopened) state.steps[step] = null
+
+  return reopened
+}
+
+// The run's force push, right after each gate rebase rewrote the branch. It
+// reads the branch from the checkout, and the refspec names that branch on
+// both sides, so no call can reach main, master or origin's default branch.
+function push(dir: string, rest: string[]): object {
+  if (rest.length) fail("usage: state.ts push .mise")
+
+  const branch = git(dir, ["branch", "--show-current"])
+
+  if (!branch) fail("HEAD is detached — there is no branch to push")
+
+  if (["main", "master", defaultBranch(dir)].includes(branch))
+    fail(`refusing to force-push ${branch}`)
+
+  git(dir, [
+    "push",
+    "--force-with-lease",
+    "--force-if-includes",
+    "-u",
+    "origin",
+    `${branch}:refs/heads/${branch}`,
+  ])
+
+  return { pushed: branch }
+}
+
+type Command = (dir: string, rest: string[]) => object
+
+const COMMANDS: Record<string, Command | undefined> = {
+  report,
+  mark,
+  unskip,
+  fix,
+  amend,
+  push,
 }
 
 const [cmd, dir, ...rest] = process.argv.slice(2)
+const command = COMMANDS[cmd ?? ""]
 
-if (!cmd || !dir) {
-  fail("usage: state.ts <report|approve> <mise-dir> [args]")
-}
+if (!command || !dir)
+  fail("usage: state.ts <report|mark|unskip|fix|amend|push> <dir> [args]")
 
-let result: object
-
-switch (cmd) {
-  case "report": {
-    result = report(dir, rest.includes("--write"))
-    break
-  }
-
-  case "approve": {
-    const stage = rest.find((a) => !a.includes("=") && !a.startsWith("--"))
-    const route = rest
-      .find((a) => a.startsWith("route="))
-      ?.slice("route=".length)
-
-    if (stage === "acceptance") {
-      if (route) {
-        fail("route accompanies only the goals approval, not acceptance")
-      }
-
-      result = approveAcceptance(dir)
-    } else {
-      result = approve(dir, asStage(stage), route)
-    }
-    break
-  }
-
-  default: {
-    fail(`unknown command: ${cmd}`)
-  }
-}
-
-console.log(JSON.stringify(result, null, 2))
+console.log(JSON.stringify(command(dir, rest), null, 2))

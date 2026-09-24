@@ -1,6 +1,6 @@
-// Subprocess tests for state.ts: each case builds a throwaway mise directory,
-// invokes the script exactly as the skill does, and asserts on the JSON it
-// prints. See state.ts for the command contract.
+// Subprocess tests for state.ts. Each case builds a throwaway repository with a
+// mise directory, invokes the script in a subprocess, as the skill does, and asserts on
+// the JSON it prints. See state.ts for the command contract.
 
 import { test, after } from "node:test"
 import assert from "node:assert/strict"
@@ -17,8 +17,27 @@ import { tmpdir } from "node:os"
 import { dirname, join } from "node:path"
 
 const SCRIPT = join(import.meta.dirname, "state.ts")
-const OVERVIEW =
-  "# Plan\n\nTask Index:\n\n- `01_01_setup.md`\n- `01_02_build.md`\n"
+const STEP_FILES = join(import.meta.dirname, "..", "steps")
+
+const SPEC = `# Spec
+
+## What
+
+Ship the thing. Not a task id: 09_09_decoy.md
+
+## Task index
+
+- \`01_01_setup.md\`
+- \`01_02_build.md\`
+`
+
+// The task files SPEC's index lists, as the spec step writes them.
+const TASKS = {
+  "tasks/01_01_setup.md": "# task",
+  "tasks/01_02_build.md": "# task",
+}
+
+const ISO = /^\d{4}-\d{2}-\d{2}T[\d:.]+Z$/
 
 const tempDirs: string[] = []
 
@@ -28,10 +47,7 @@ after(() => {
   }
 })
 
-function miseDir(files: Record<string, string> = {}): string {
-  const dir = mkdtempSync(join(tmpdir(), "mise-"))
-  tempDirs.push(dir)
-
+function place(dir: string, files: Record<string, string>): string {
   for (const [name, content] of Object.entries(files)) {
     const path = join(dir, name)
     mkdirSync(dirname(path), { recursive: true })
@@ -41,10 +57,76 @@ function miseDir(files: Record<string, string> = {}): string {
   return dir
 }
 
+// Git with no user or system config, so the owner's settings never leak in.
+const ENV = {
+  ...process.env,
+  GIT_CONFIG_GLOBAL: "/dev/null",
+  GIT_CONFIG_NOSYSTEM: "1",
+  GIT_AUTHOR_NAME: "test",
+  GIT_AUTHOR_EMAIL: "test@example.com",
+  GIT_COMMITTER_NAME: "test",
+  GIT_COMMITTER_EMAIL: "test@example.com",
+}
+
+function git(root: string, ...args: string[]): string {
+  return execFileSync("git", args, { cwd: root, env: ENV, encoding: "utf8" })
+    .toString()
+    .trim()
+}
+
+// A repository on a feature branch whose origin's default branch is main,
+// with the mise directory at its root.
+function miseDir(
+  files: Record<string, string> = {},
+  { originHead = true } = {},
+): string {
+  const root = mkdtempSync(join(tmpdir(), "mise-"))
+  tempDirs.push(root)
+
+  git(root, "init", "-q", "-b", "main")
+  git(root, "commit", "-q", "--allow-empty", "-m", "init")
+  git(root, "update-ref", "refs/remotes/origin/main", "HEAD")
+  if (originHead)
+    git(
+      root,
+      "symbolic-ref",
+      "refs/remotes/origin/HEAD",
+      "refs/remotes/origin/main",
+    )
+  git(root, "switch", "-q", "-c", "feat/x")
+
+  const dir = join(root, ".mise")
+  mkdirSync(dir)
+
+  return place(dir, files)
+}
+
+// Commit files at the repository root, as an implementer does.
+function commit(dir: string, files: Record<string, string>): string {
+  const root = dirname(dir)
+  place(root, files)
+  git(root, "add", "--", ".", ":!.mise")
+  git(root, "commit", "-q", "-m", "work")
+
+  return git(root, "rev-parse", "HEAD")
+}
+
+// n source files, named so their diff order is stable.
+function sources(n: number, prefix = "src"): Record<string, string> {
+  const files: Record<string, string> = {}
+
+  for (let i = 1; i <= n; i++)
+    files[`${prefix}/${String(i).padStart(2, "0")}.ts`] =
+      `export const n = ${i}\n`
+
+  return files
+}
+
 function run(...args: string[]): { code: number; json: any } {
   try {
     const stdout = execFileSync("node", [SCRIPT, ...args], {
       encoding: "utf8",
+      env: ENV,
     })
     return { code: 0, json: JSON.parse(stdout) }
   } catch (error) {
@@ -66,41 +148,38 @@ function fails(...args: string[]): any {
   return json
 }
 
-// Approve the direct-route stages up to and including `through`, creating
-// artifacts along the way. Returns the mise dir.
-function directRoute(through: "goals" | "requirements" | "plan"): string {
-  const dir = miseDir({ "goals.md": "# goals" })
-  ok("approve", dir, "goals", "route=direct")
-
-  if (through === "goals") {
-    return dir
-  }
-
-  writeFileSync(join(dir, "requirements.md"), "# reqs")
-  ok("approve", dir, "requirements")
-
-  if (through === "requirements") {
-    return dir
-  }
-
-  mkdirSync(join(dir, "implementation_plan"), { recursive: true })
-  writeFileSync(join(dir, "implementation_plan", "00_overview.md"), OVERVIEW)
-  ok("approve", dir, "plan")
-
-  return dir
+function state(dir: string): any {
+  return JSON.parse(readFileSync(join(dir, ".workflow-state"), "utf8"))
 }
 
-// Move a task file into done/, as the execute stage does.
+// Move a task file into tasks/done/, as the execute step does.
 function markDone(dir: string, filename: string): void {
-  const done = join(dir, "implementation_plan", "done")
+  const done = join(dir, "tasks", "done")
   mkdirSync(done, { recursive: true })
+  rmSync(join(dir, "tasks", filename), { force: true })
   writeFileSync(join(done, filename), "# done task")
 }
 
-// --- report: in-flight detection ----------------------------------------------
+// A started run has goals.md, an initialized state file, then any later
+// artifacts (which the engine rejects if they predate the state file).
+function started(files: Record<string, string> = {}): string {
+  const dir = miseDir({ "goals.md": "# goals" })
+  ok("report", dir, "--write")
+
+  return place(dir, files)
+}
+
+// A run whose goals are approved and whose spec and critic are skipped.
+function noSpec(dir: string): void {
+  ok("mark", dir, "goals", "done")
+  ok("mark", dir, "spec", "skipped")
+  ok("mark", dir, "critic", "skipped")
+}
+
+// --- report: in-flight detection ---------------------------------------------
 
 test("report: missing directory is not in flight", () => {
-  assert.deepEqual(ok("report", "/nonexistent/mise-dir"), { in_flight: false })
+  assert.deepEqual(ok("report", "/nonexistent/.mise"), { in_flight: false })
 })
 
 test("report: empty directory is not in flight", () => {
@@ -108,145 +187,610 @@ test("report: empty directory is not in flight", () => {
 })
 
 test("report: goals.md without a state file is a fresh start", () => {
-  const report = ok("report", miseDir({ "goals.md": "# goals" }))
-  assert.equal(report.in_flight, true)
-  assert.equal(report.file, "new")
-  assert.equal(report.next_action, "stage:goals")
-  assert.equal(report.route, null)
-})
-
-test("report: --write persists the fresh state file", () => {
   const dir = miseDir({ "goals.md": "# goals" })
 
-  assert.equal(ok("report", dir, "--write").wrote, true)
-  const state = JSON.parse(readFileSync(join(dir, ".workflow-state"), "utf8"))
-  assert.deepEqual(state, {})
-  assert.equal(ok("report", dir).file, "ok")
+  assert.deepEqual(ok("report", dir), {
+    in_flight: true,
+    next_action: "step:goals",
+    step_file: join(STEP_FILES, "02-goals.md"),
+    base: "main",
+    tasks: { done: 0, remaining: 0, next_id: null, next_file: null },
+    checks: null,
+    amendments: 0,
+  })
+  assert.equal(existsSync(join(dir, ".workflow-state")), false)
 })
 
-// --- report: next_action progression ---------------------------------------
+test("report: --write initializes the state file", () => {
+  const dir = started()
+  const written = state(dir)
 
-test("report: direct route walks requirements then plan then execute", () => {
-  const dir = directRoute("goals")
-  assert.equal(ok("report", dir).next_action, "stage:requirements")
+  assert.equal(written.version, 3)
+  assert.match(written.started, ISO)
+  assert.equal(written.base, "main")
+  assert.deepEqual(written.steps, {
+    goals: null,
+    spec: null,
+    critic: null,
+    execute: null,
+    review: null,
+    gate: null,
+  })
+  assert.equal(written.amendments, 0)
+  assert.equal(written.checks_from, null)
+  assert.equal(written.fix_rounds, 0)
+})
 
-  writeFileSync(join(dir, "requirements.md"), "# reqs")
-  ok("approve", dir, "requirements")
-  assert.equal(ok("report", dir).next_action, "stage:plan")
+test("report: a repository whose origin/HEAD is unset cannot start a run", () => {
+  const dir = miseDir({ "goals.md": "# goals" }, { originHead: false })
 
-  mkdirSync(join(dir, "implementation_plan"), { recursive: true })
-  writeFileSync(join(dir, "implementation_plan", "00_overview.md"), OVERVIEW)
-  ok("approve", dir, "plan")
+  assert.match(fails("report", dir, "--write").error, /set-head origin --auto/)
+  assert.equal(existsSync(join(dir, ".workflow-state")), false)
+})
 
+// --- report: next_action order -----------------------------------------------
+
+// Every step the report names has its file on disk, numbered in run order.
+function expectStep(dir: string, action: string): void {
   const report = ok("report", dir)
-  assert.equal(report.next_action, "stage:execute")
-  assert.deepEqual(report.task_index_ids, ["01_01", "01_02"])
-  assert.deepEqual(report.tasks_done, [])
-  assert.deepEqual(report.tasks_remaining, ["01_01", "01_02"])
-})
+  const step = action.replace(/^step:/, "")
 
-test("report: full route includes the mock stage", () => {
-  const dir = miseDir({ "goals.md": "# goals" })
-  ok("approve", dir, "goals", "route=full")
-  assert.equal(ok("report", dir).next_action, "stage:mock")
-})
+  assert.equal(report.next_action, action)
+  assert.match(report.step_file, new RegExp(`/\\d{2}-${step}\\.md$`))
+  assert.ok(existsSync(report.step_file), report.step_file)
+}
 
-test("report: bugfix route goes straight to plan", () => {
-  const dir = miseDir({ "goals.md": "# bug understanding" })
-  ok("approve", dir, "goals", "route=bugfix")
-  assert.equal(ok("report", dir).next_action, "stage:plan")
-})
+test("report: the full step order ends at close", () => {
+  const dir = started()
 
-test("report: done/ drives remaining tasks and acceptance", () => {
-  const dir = directRoute("plan")
+  expectStep(dir, "step:goals")
+  ok("mark", dir, "goals", "done")
+  expectStep(dir, "step:spec")
+
+  place(dir, { "spec.md": SPEC, ...TASKS })
+  ok("mark", dir, "spec", "done")
+  expectStep(dir, "step:critic")
+
+  ok("mark", dir, "critic", "done")
+  expectStep(dir, "step:execute")
+
   markDone(dir, "01_01_setup.md")
+  expectStep(dir, "step:execute")
+
+  // The last task done leaves execute open for its whole-diff review.
+  markDone(dir, "01_02_build.md")
+  expectStep(dir, "step:execute")
+
+  ok("mark", dir, "execute", "done")
+  expectStep(dir, "step:review")
+
+  ok("mark", dir, "review", "done")
+  expectStep(dir, "step:gate")
+
+  ok("mark", dir, "gate", "done")
+  expectStep(dir, "close")
+  assert.ok(existsSync(join(STEP_FILES, "01-start.md")))
+})
+
+test("report: the task index drives the task counts", () => {
+  const dir = started({ "spec.md": SPEC, ...TASKS })
+  ok("mark", dir, "spec", "done")
 
   let report = ok("report", dir)
-  assert.equal(report.next_action, "stage:execute")
-  assert.deepEqual(report.tasks_done, ["01_01"])
-  assert.deepEqual(report.tasks_remaining, ["01_02"])
+  assert.deepEqual(report.tasks, {
+    done: 0,
+    remaining: 2,
+    next_id: "01_01",
+    next_file: join(dir, "tasks", "01_01_setup.md"),
+  })
 
   markDone(dir, "01_02_build.md")
+  markDone(dir, "09_09_superseded.md") // not in the index, so ignored
   report = ok("report", dir)
-  assert.equal(report.next_action, "acceptance")
+  assert.deepEqual(report.tasks, {
+    done: 1,
+    remaining: 1,
+    next_id: "01_01",
+    next_file: join(dir, "tasks", "01_01_setup.md"),
+  })
 })
 
-test("report: done files not in the task index are ignored", () => {
-  const dir = directRoute("plan")
-  markDone(dir, "09_09_superseded.md")
+// The report names the next task's file so the driver never lists tasks/ or
+// re-reads the spec's index to find it.
+test("report: next_file resolves the next task's file, done or not", () => {
+  const dir = started({ "spec.md": SPEC, ...TASKS })
+  ok("mark", dir, "spec", "done")
+
+  assert.equal(
+    ok("report", dir).tasks.next_file,
+    join(dir, "tasks", "01_01_setup.md"),
+  )
+
+  markDone(dir, "01_01_setup.md")
 
   const report = ok("report", dir)
-  assert.deepEqual(report.tasks_done, [])
-  assert.deepEqual(report.tasks_remaining, ["01_01", "01_02"])
+  assert.deepEqual(report.tasks, {
+    done: 1,
+    remaining: 1,
+    next_id: "01_02",
+    next_file: join(dir, "tasks", "01_02_build.md"),
+  })
 })
 
-test("report: a missing overview simply makes plan the next stage", () => {
-  const dir = directRoute("requirements")
-  mkdirSync(join(dir, "implementation_plan"), { recursive: true })
-  writeFileSync(join(dir, "implementation_plan", "01_01_setup.md"), "# task")
+// An index the engine cannot read would let execute close with nothing built.
+test("mark: a spec is done only once its Task index names every task file", () => {
+  const dir = started({
+    "spec.md": "# Spec\n\n## What\n\n`01_01_setup.md`\n",
+    ...TASKS,
+  })
+  ok("mark", dir, "goals", "done")
 
-  assert.equal(ok("report", dir).next_action, "stage:plan")
+  // Only the Task index section names task files.
+  assert.match(fails("mark", dir, "spec", "done").error, /names no task file/)
+
+  // Bare ids are not task file names.
+  const bare = "## Task index\n\n| id | what |\n| --- | --- |\n| 01_01 | a |\n"
+  writeFileSync(join(dir, "spec.md"), bare)
+  assert.match(fails("mark", dir, "spec", "done").error, /names no task file/)
+
+  writeFileSync(join(dir, "spec.md"), SPEC + "- `01_03_ship.md`\n")
+  assert.match(
+    fails("mark", dir, "spec", "done").error,
+    /lists 01_03_ship.md with no such file/,
+  )
+  assert.equal(state(dir).steps.spec, null)
+
+  place(dir, { "tasks/01_03_ship.md": "# task" })
+  ok("mark", dir, "spec", "done")
 })
 
-// --- report: mismatch cascade ----------------------------------------------
+test("mark: index rows name task files, never a touched path's tail", () => {
+  const dir = started({
+    "spec.md":
+      "## Task index\n\n" +
+      "| file | what | touches |\n| --- | --- | --- |\n" +
+      "| `01_01_notes.md` | a | docs/changelog/2026_09_22_release.md |\n" +
+      "| `01_02_more.md` | b | src/01_03_old.md, `01_04_x.md` |\n",
+    "tasks/01_01_notes.md": "# task",
+    "tasks/01_02_more.md": "# task",
+  })
+  ok("mark", dir, "goals", "done")
+  ok("mark", dir, "spec", "done")
 
-test("report: editing an approved artifact reopens every later stage", () => {
-  const dir = directRoute("requirements")
-  writeFileSync(join(dir, "goals.md"), "# goals, edited after approval")
+  assert.equal(ok("report", dir).tasks.remaining, 2)
+})
+
+test("report: a task file the index does not name is an error", () => {
+  const dir = started({ "spec.md": SPEC, ...TASKS })
+  ok("mark", dir, "goals", "done")
+  ok("mark", dir, "spec", "done")
+
+  // Renamed on disk but not in the index, so the index row has no file.
+  rmSync(join(dir, "tasks", "01_02_build.md"))
+  place(dir, { "tasks/02_01_build.md": "# task" })
+
+  assert.match(fails("report", dir).error, /01_02_build.md with no such file/)
+
+  writeFileSync(join(dir, "spec.md"), SPEC.replace("01_02", "02_01"))
+  place(dir, { "tasks/03_01_stray.md": "# task" })
+  assert.match(fails("report", dir).error, /03_01_stray.md is not in the Task/)
+})
+
+test("report: a new task reusing a finished task's id is an error", () => {
+  const dir = started()
+  noSpec(dir)
+  markDone(dir, "01_01_fix.md")
+  place(dir, { "tasks/01_01_more.md": "# task" })
+
+  assert.match(fails("report", dir).error, /01_01 is in both/)
+})
+
+test("report: a skipped spec makes the work one implicit task", () => {
+  const dir = started()
+  noSpec(dir)
+
+  let report = ok("report", dir)
+  assert.equal(report.next_action, "step:execute")
+  assert.equal(report.tasks.next_id, "01_01")
+
+  markDone(dir, "01_01_only.md")
+  report = ok("report", dir)
+  assert.equal(report.tasks.done, 1)
+  assert.equal(report.tasks.remaining, 0)
+})
+
+test("report: with no spec, an added task file reopens execute", () => {
+  const dir = started()
+  noSpec(dir)
+
+  markDone(dir, "01_01_fix.md")
+  ok("mark", dir, "execute", "done")
+  assert.equal(ok("report", dir).next_action, "step:review")
+
+  // An amendment in a run with no spec: its new task file is the index.
+  ok("amend", dir)
+  place(dir, { "tasks/01_02_copy.md": "# task" })
 
   const report = ok("report", dir)
-  assert.equal(report.stages.goals.verdict, "mismatch")
-  assert.equal(report.stages.requirements.verdict, "unapproved")
-  assert.deepEqual(report.reopened, ["requirements"])
-  assert.equal(report.next_action, "stage:goals")
+  assert.deepEqual(report.tasks, {
+    done: 1,
+    remaining: 1,
+    next_id: "01_02",
+    next_file: join(dir, "tasks", "01_02_copy.md"),
+  })
+  assert.equal(report.next_action, "step:execute")
 })
 
-test("report: cascade is read-only without --write", () => {
-  const dir = directRoute("requirements")
-  const before = readFileSync(join(dir, ".workflow-state"), "utf8")
-  writeFileSync(join(dir, "goals.md"), "# edited")
+test("report: execute reopens when the spec gains a task", () => {
+  const dir = started({ "spec.md": SPEC, ...TASKS })
+  ok("mark", dir, "goals", "done")
+  ok("mark", dir, "spec", "done")
+  ok("mark", dir, "critic", "done")
+  markDone(dir, "01_01_setup.md")
+  markDone(dir, "01_02_build.md")
+  ok("mark", dir, "execute", "done")
+  assert.equal(ok("report", dir).next_action, "step:review")
+
+  place(dir, { "tasks/01_03_ship.md": "# task" })
+  writeFileSync(join(dir, "spec.md"), SPEC + "- `01_03_ship.md`\n")
+  assert.equal(ok("report", dir).next_action, "step:execute")
+})
+
+// --- mark ---------------------------------------------------------------------
+
+test("mark: done and skipped are recorded in the state", () => {
+  const dir = started()
+
+  assert.deepEqual(ok("mark", dir, "goals", "done"), {
+    step: "goals",
+    state: "done",
+  })
+  assert.deepEqual(ok("mark", dir, "spec", "skipped"), {
+    step: "spec",
+    state: "skipped",
+  })
+
+  const written = state(dir)
+  assert.equal(written.steps.goals, "done")
+  assert.equal(written.steps.spec, "skipped")
+})
+
+test("mark: a skip takes no reason", () => {
+  const dir = started()
+
+  assert.match(
+    fails("mark", dir, "critic", "skipped", "no spec").error,
+    /usage/,
+  )
+  assert.equal(state(dir).steps.critic, null)
+})
+
+test("mark: unknown steps and states are rejected", () => {
+  const dir = started()
+
+  assert.match(fails("mark", dir, "mock", "done").error, /expected a step/)
+  assert.match(fails("mark", dir, "sweep", "done").error, /expected a step/)
+  assert.match(fails("mark", dir, "adherence", "done").error, /expected a step/)
+  for (const step of ["goals", "review", "gate"])
+    assert.match(fails("mark", dir, step, "skipped").error, /never skipped/)
+  assert.match(fails("mark", dir, "goals", "approved").error, /done\|skipped/)
+  fails("mark", dir, "goals")
+  fails("mark", dir)
+  assert.deepEqual(state(dir).steps.goals, null)
+})
+
+test("mark: execute closes only once every task is done, and never skips", () => {
+  const dir = started({ "spec.md": SPEC, ...TASKS })
+  for (const step of ["goals", "spec", "critic"]) ok("mark", dir, step, "done")
+  markDone(dir, "01_01_setup.md")
+
+  assert.match(
+    fails("mark", dir, "execute", "done").error,
+    /1 task\(s\) left, next 01_02/,
+  )
+  assert.match(fails("mark", dir, "execute", "skipped").error, /never skipped/)
+  assert.equal(state(dir).steps.execute, null)
+
+  markDone(dir, "01_02_build.md")
+  ok("mark", dir, "execute", "done")
+  assert.equal(state(dir).steps.execute, "done")
+})
+
+// --- amend --------------------------------------------------------------------
+
+test("amend: reopens execute and counts up", () => {
+  const dir = started({ "spec.md": SPEC, ...TASKS })
+  for (const step of ["goals", "spec", "critic"]) ok("mark", dir, step, "done")
+  markDone(dir, "01_01_setup.md")
+  markDone(dir, "01_02_build.md")
+  ok("mark", dir, "execute", "done")
+  ok("mark", dir, "review", "done")
+  assert.equal(ok("report", dir).next_action, "step:gate")
+
+  const result = ok("amend", dir)
+  assert.equal(result.amendments, 1)
+  assert.deepEqual(result.reopened, ["execute", "review"])
 
   const report = ok("report", dir)
-  assert.equal(report.pending_writes, true)
-  assert.equal(report.wrote, false)
-  assert.equal(readFileSync(join(dir, ".workflow-state"), "utf8"), before)
+  assert.equal(report.next_action, "step:execute")
+  assert.equal(report.amendments, 1)
+
+  const written = state(dir)
+  assert.equal(written.steps.execute, null)
+  assert.equal(written.steps.review, null) // the owner reviews the new work
+  assert.equal(written.steps.critic, "done")
+
+  assert.equal(ok("amend", dir).amendments, 2)
+  fails("amend", dir, "--now")
 })
 
-test("report: --write persists the cascade", () => {
-  const dir = directRoute("requirements")
-  writeFileSync(join(dir, "goals.md"), "# edited")
+test("report: tasks added after execute closed reopen it without amend", () => {
+  const dir = started()
+  noSpec(dir)
+  commit(dir, sources(2))
+  markDone(dir, "01_01_fix.md")
+  ok("mark", dir, "execute", "done")
+  ok("mark", dir, "review", "done")
+  assert.equal(ok("report", dir).next_action, "step:gate")
 
-  assert.equal(ok("report", dir, "--write").wrote, true)
-  const state = JSON.parse(readFileSync(join(dir, ".workflow-state"), "utf8"))
-  assert.equal(state.approved?.requirements, undefined)
-  assert.match(state.approved?.goals ?? "", /^[0-9a-f]{40}$/)
+  // A planner wrote the amendment's task, then the session ended before amend.
+  const at = git(dirname(dir), "rev-parse", "HEAD")
+  place(dir, { "tasks/02_01_more.md": "# task" })
+  assert.equal(ok("report", dir).next_action, "step:execute")
+
+  const written = state(dir)
+  assert.equal(written.steps.execute, null)
+  assert.equal(written.steps.review, null)
+  assert.equal(written.checks_from, at)
+
+  commit(dir, sources(1, "more"))
+  markDone(dir, "02_01_more.md")
+  assert.deepEqual(ok("report", dir).checks, {
+    range: `${at}..HEAD`,
+    slices: ["1–1"],
+    fix_rounds_left: 2,
+  })
+
+  // The amend that follows keeps the range the reopen set.
+  ok("amend", dir)
+  assert.equal(state(dir).checks_from, at)
 })
 
-// --- report: broken state files are errors -------------------------------------
+test("amend: --critic sends the new tasks through the critic first", () => {
+  const dir = started({ "spec.md": SPEC, ...TASKS })
+  for (const step of ["goals", "spec", "critic"]) ok("mark", dir, step, "done")
 
-test("report: missing state file with later artifacts is an error", () => {
-  const dir = miseDir({ "goals.md": "# goals", "requirements.md": "# reqs" })
+  assert.deepEqual(ok("amend", dir, "--critic").reopened, ["critic", "execute"])
+  assert.equal(ok("report", dir).next_action, "step:critic")
 
-  const { error } = fails("report", dir)
-  assert.match(error, /mise:.*checkpoint/)
-  assert.match(error, /delete the mise directory/)
+  const bare = started()
+  noSpec(bare)
+  assert.match(fails("amend", bare, "--critic").error, /unskip spec and critic/)
 })
+
+test("amend: while execute is open, the round under way takes the new tasks", () => {
+  const dir = started()
+  noSpec(dir)
+  commit(dir, sources(2))
+  markDone(dir, "01_01_fix.md")
+
+  ok("amend", dir)
+  const report = ok("report", dir)
+  assert.equal(report.checks.range, "origin/main...HEAD")
+  assert.equal(state(dir).checks_from, null)
+})
+
+// --- checks and fix rounds -----------------------------------------------------
+
+test("report: checks slice the branch diff once no task is left", () => {
+  const dir = started({ "spec.md": SPEC, ...TASKS })
+  for (const step of ["goals", "spec", "critic"]) ok("mark", dir, step, "done")
+  commit(dir, sources(25))
+  place(dir, { "notes.md": "not committed, not in the diff" })
+
+  assert.equal(ok("report", dir).checks, null) // tasks remain
+
+  markDone(dir, "01_01_setup.md")
+  markDone(dir, "01_02_build.md")
+
+  assert.deepEqual(ok("report", dir).checks, {
+    range: "origin/main...HEAD",
+    slices: ["1–20", "21–25"],
+    fix_rounds_left: 2,
+  })
+
+  ok("mark", dir, "execute", "done")
+  assert.equal(ok("report", dir).checks, null)
+})
+
+test("fix: each round's checks cover only its commits, two rounds at most", () => {
+  const dir = started()
+  noSpec(dir)
+  commit(dir, sources(3))
+  markDone(dir, "01_01_fix.md")
+
+  assert.deepEqual(ok("fix", dir), { fix_rounds_left: 1 })
+  assert.match(
+    fails("mark", dir, "execute", "done").error,
+    /committed nothing yet/,
+  )
+  const first = git(dirname(dir), "rev-parse", "HEAD")
+  assert.deepEqual(ok("report", dir).checks, {
+    range: `${first}..HEAD`,
+    slices: [],
+    fix_rounds_left: 1,
+  })
+
+  commit(dir, { "src/01.ts": "export const n = 0\n" })
+  assert.deepEqual(ok("report", dir).checks.slices, ["1–1"])
+
+  assert.deepEqual(ok("fix", dir), { fix_rounds_left: 0 })
+  assert.match(fails("fix", dir).error, /2 fix rounds are spent/)
+  assert.equal(state(dir).fix_rounds, 2)
+  fails("fix", dir, "extra")
+})
+
+test("amend: its checks cover only its commits, with fresh fix rounds", () => {
+  const dir = started()
+  noSpec(dir)
+  commit(dir, sources(3))
+  markDone(dir, "01_01_fix.md")
+  ok("fix", dir)
+  commit(dir, { "src/01.ts": "export const n = 0\n" })
+  ok("mark", dir, "execute", "done")
+
+  ok("amend", dir)
+  const at = git(dirname(dir), "rev-parse", "HEAD")
+  place(dir, { "tasks/01_02_copy.md": "# task" })
+  commit(dir, sources(2, "copy"))
+  markDone(dir, "01_02_copy.md")
+
+  assert.deepEqual(ok("report", dir).checks, {
+    range: `${at}..HEAD`,
+    slices: ["1–2"],
+    fix_rounds_left: 2,
+  })
+})
+
+// --- unskip -------------------------------------------------------------------
+
+test("unskip: a skipped step runs in its turn again", () => {
+  const dir = started()
+  noSpec(dir)
+  markDone(dir, "01_01_fix.md")
+  assert.equal(ok("report", dir).next_action, "step:execute")
+
+  assert.deepEqual(ok("unskip", dir, "spec"), { step: "spec", state: null })
+  assert.equal(ok("report", dir).next_action, "step:spec")
+  assert.equal(state(dir).steps.spec, null)
+})
+
+test("unskip: only a skipped step can be unskipped", () => {
+  const dir = started()
+  ok("mark", dir, "goals", "done")
+
+  assert.match(fails("unskip", dir, "goals").error, /not skipped/)
+  assert.match(fails("unskip", dir, "spec").error, /not skipped/)
+  assert.match(fails("unskip", dir, "sweep").error, /expected a step/)
+  fails("unskip", dir, "spec", "extra")
+  assert.equal(state(dir).steps.goals, "done")
+})
+
+// --- push ---------------------------------------------------------------------
+
+// A bare origin holding main, with origin/HEAD pointing at `head`.
+function withOrigin(dir: string, head = "main"): string {
+  const root = dirname(dir)
+  const origin = mkdtempSync(join(tmpdir(), "mise-origin-"))
+  tempDirs.push(origin)
+
+  git(origin, "init", "-q", "--bare")
+  git(root, "remote", "add", "origin", origin)
+  git(root, "push", "-q", "origin", "main")
+  if (head !== "main") git(root, "push", "-q", "origin", `main:${head}`)
+  git(root, "fetch", "-q", "origin")
+  git(
+    root,
+    "symbolic-ref",
+    "refs/remotes/origin/HEAD",
+    `refs/remotes/origin/${head}`,
+  )
+
+  return origin
+}
+
+test("push: force-pushes the branch with lease, rewritten history included", () => {
+  const dir = miseDir()
+  const origin = withOrigin(dir)
+  commit(dir, sources(1))
+
+  assert.deepEqual(ok("push", dir), { pushed: "feat/x" })
+
+  git(dirname(dir), "commit", "-q", "--amend", "-m", "rewritten")
+  ok("push", dir)
+  assert.equal(
+    git(origin, "rev-parse", "feat/x"),
+    git(dirname(dir), "rev-parse", "HEAD"),
+  )
+  assert.equal(
+    git(dirname(dir), "rev-parse", "--abbrev-ref", "@{u}"),
+    "origin/feat/x",
+  )
+})
+
+test("push: never main, master or origin's default branch", () => {
+  const dir = miseDir()
+  withOrigin(dir, "develop")
+  const root = dirname(dir)
+
+  for (const branch of ["main", "master", "develop"]) {
+    git(root, "switch", "-q", "-C", branch)
+    assert.match(fails("push", dir).error, new RegExp(`refusing.*${branch}`))
+  }
+
+  git(root, "switch", "-q", "--detach")
+  assert.match(fails("push", dir).error, /detached/)
+  fails("push", dir, "origin", "main")
+})
+
+test("push: a remote branch with commits this checkout lacks is not overwritten", () => {
+  const dir = miseDir()
+  const origin = withOrigin(dir)
+  commit(dir, sources(1))
+  ok("push", dir)
+
+  // Someone else pushes to the branch; this checkout never fetches it.
+  const other = mkdtempSync(join(tmpdir(), "mise-other-"))
+  tempDirs.push(other)
+  git(other, "clone", "-q", "-b", "feat/x", origin, ".")
+  git(other, "commit", "-q", "--allow-empty", "-m", "theirs")
+  git(other, "push", "-q", "origin", "feat/x")
+
+  git(dirname(dir), "commit", "-q", "--amend", "-m", "ours")
+  assert.match(fails("push", dir).error, /rejected|stale/)
+  assert.equal(git(origin, "log", "-1", "--format=%s", "feat/x"), "theirs")
+})
+
+// --- broken state files are errors, never rebuilt ------------------------------
 
 test("report: unparseable state file is an error, never repaired", () => {
-  const raw = '{"route": "direct"'
+  const raw = '{"version": 3'
   const dir = miseDir({ "goals.md": "# goals", ".workflow-state": raw })
 
   fails("report", dir)
   fails("report", dir, "--write")
+  fails("mark", dir, "goals", "done")
   assert.equal(readFileSync(join(dir, ".workflow-state"), "utf8"), raw)
 })
 
-test("report: hand-edited fields make the state file an error", () => {
+test("report: state files that break the schema are errors", () => {
+  const good = {
+    version: 3,
+    started: "2026-09-22T00:00:00.000Z",
+    base: "main",
+    steps: { goals: null },
+    amendments: 0,
+    checks_from: null,
+    fix_rounds: 0,
+  }
+
   for (const bad of [
-    { route: "sideways" },
-    { status: "active" },
-    { route: "direct", approved: { goals: "nothex" } },
-    { approved: { goals: "0123456789abcdef0123456789abcdef01234567" } }, // no route
+    { ...good, version: 2 },
+    { ...good, started: "whenever" },
+    { ...good, amendments: -1 },
+    { ...good, amendments: "two" },
+    { ...good, status: "active" },
+    { ...good, steps: { goals: "approved" } },
+    { ...good, steps: { mock: "done" } },
+    { ...good, steps: { execute: "skipped" } },
+    { ...good, steps: { review: "skipped" } },
+    { ...good, steps: { adherence: "done" } }, // not a step
+    { ...good, base: "" },
+    { ...good, checks_from: "HEAD~1" },
+    { ...good, fix_rounds: 3 },
+    { ...good, steps: "goals" },
+    { ...good, skipReason: {} },
+    { version: 3, started: good.started },
   ]) {
     const dir = miseDir({
       "goals.md": "# goals",
@@ -254,275 +798,50 @@ test("report: hand-edited fields make the state file an error", () => {
     })
 
     const { error } = fails("report", dir)
-    assert.match(
-      error,
-      /broken/,
-      `expected broken error for ${JSON.stringify(bad)}`,
-    )
+    assert.match(error, /broken/, `expected broken: ${JSON.stringify(bad)}`)
+    assert.match(error, /checkpoint commit/)
   }
 })
 
-// --- approve -----------------------------------------------------------------
+test("report: a lost state file with artifacts is an error", () => {
+  const cases: Record<string, string>[] = [
+    { "spec.md": SPEC },
+    { "tasks/01_01_a.md": "# task" },
+  ]
 
-test("approve: goals records the hash and the route together", () => {
+  for (const files of cases) {
+    const dir = miseDir({ "goals.md": "# goals", ...files })
+    const { error } = fails("report", dir)
+
+    assert.match(error, /state file missing/)
+    assert.match(error, /delete the mise directory/)
+  }
+})
+
+test("commands: only report --write opens a run", () => {
   const dir = miseDir({ "goals.md": "# goals" })
 
-  const result = ok("approve", dir, "goals", "route=direct")
-  assert.equal(result.approved, "goals")
-  assert.equal(result.route, "direct")
-  assert.match(result.hash, /^[0-9a-f]{40}$/)
-  assert.equal(result.changed_reapproval, false)
-
-  const report = ok("report", dir)
-  assert.equal(report.route, "direct")
-  assert.equal(report.stages.goals.verdict, "approved")
-})
-
-test("approve: goals without a route fails", () => {
-  const dir = miseDir({ "goals.md": "# goals" })
-  fails("approve", dir, "goals")
-  fails("approve", dir, "goals", "route=sideways")
-})
-
-test("approve: route on a non-goals stage fails", () => {
-  const dir = directRoute("goals")
-  writeFileSync(join(dir, "requirements.md"), "# reqs")
-  fails("approve", dir, "requirements", "route=direct")
-})
-
-test("approve: re-approving goals can change the route", () => {
-  const dir = directRoute("goals")
-
-  const result = ok("approve", dir, "goals", "route=full")
-  assert.equal(result.route, "full")
-  assert.equal(result.changed_reapproval, false) // same hash, new route
-  assert.equal(ok("report", dir).next_action, "stage:mock")
-})
-
-test("approve: changed re-approval drops later approvals", () => {
-  const dir = directRoute("requirements")
-  writeFileSync(join(dir, "goals.md"), "# edited")
-
-  const result = ok("approve", dir, "goals", "route=direct")
-  assert.equal(result.changed_reapproval, true)
-  assert.deepEqual(result.reopened, ["requirements"])
-  assert.equal(ok("report", dir).next_action, "stage:requirements")
-})
-
-test("approve: missing artifact fails", () => {
-  fails("approve", miseDir(), "goals", "route=direct")
-})
-
-test("approve: missing mise directory fails", () => {
-  fails("approve", "/nonexistent/mise-dir", "goals", "route=direct")
-})
-
-test("approve: stage outside the current route fails", () => {
-  const dir = directRoute("goals")
-  writeFileSync(join(dir, "mocks.html"), "<html></html>")
-  writeFileSync(join(dir, "mocks.context.md"), "# context")
-  fails("approve", dir, "mock")
-})
-
-test("approve: unknown stage name fails", () => {
-  fails("approve", miseDir({ "goals.md": "# goals" }), "nonsense")
-})
-
-test("approve: broken state file fails with the restore hint", () => {
-  const dir = miseDir({
-    "goals.md": "# goals",
-    ".workflow-state": "not json",
-  })
-  const { error } = fails("approve", dir, "goals", "route=direct")
-  assert.match(error, /broken/)
-})
-
-// --- approve: done/ is scoped to one plan version ------------------------------
-
-test("approve: changed plan re-approval clears done/", () => {
-  const dir = directRoute("plan")
-  markDone(dir, "01_01_setup.md")
-  writeFileSync(
-    join(dir, "implementation_plan", "00_overview.md"),
-    OVERVIEW + "\n- `01_03_ship.md`\n",
-  )
-
-  const result = ok("approve", dir, "plan")
-  assert.equal(result.changed_reapproval, true)
-  assert.deepEqual(result.cleared_done, ["01_01"])
-  assert.equal(existsSync(join(dir, "implementation_plan", "done")), false)
-  assert.deepEqual(ok("report", dir).tasks_remaining, [
-    "01_01",
-    "01_02",
-    "01_03",
+  for (const args of [
+    ["mark", "goals", "done"],
+    ["unskip", "spec"],
+    ["fix"],
+    ["amend"],
   ])
+    assert.match(fails(args[0], dir, ...args.slice(1)).error, /no run is open/)
+
+  assert.match(fails("report", dir, "--wirte").error, /usage/)
+  assert.equal(existsSync(join(dir, ".workflow-state")), false)
 })
 
-test("approve: plan re-approval after a cascade also clears done/", () => {
-  // Upstream edit cascades away the plan approval; the later plan approval
-  // has no recorded previous hash, but done/ must still not survive
-  // into a different plan version.
-  const dir = directRoute("plan")
-  markDone(dir, "01_01_setup.md")
-  writeFileSync(join(dir, "goals.md"), "# edited upstream")
-  ok("report", dir, "--write")
-  ok("approve", dir, "goals", "route=direct")
-  ok("approve", dir, "requirements")
-  writeFileSync(
-    join(dir, "implementation_plan", "00_overview.md"),
-    OVERVIEW + "\n- `01_03_ship.md`\n",
+test("commands: a missing mise directory fails", () => {
+  assert.match(
+    fails("mark", "/nonexistent/.mise", "goals", "done").error,
+    /not found/,
   )
-
-  const result = ok("approve", dir, "plan")
-  assert.equal(result.changed_reapproval, false) // cascade dropped the previous entry
-  assert.deepEqual(result.cleared_done, ["01_01"])
+  fails("amend", "/nonexistent/.mise")
 })
 
-test("approve: unchanged plan re-approval keeps done/", () => {
-  const dir = directRoute("plan")
-  markDone(dir, "01_01_setup.md")
-
-  const result = ok("approve", dir, "plan")
-  assert.equal(result.changed_reapproval, false)
-  assert.equal(result.cleared_done, undefined)
-  assert.deepEqual(ok("report", dir).tasks_done, ["01_01"])
-})
-
-// --- acceptance ---------------------------------------------------------------
-
-test("approve: acceptance flips next_action to close_out", () => {
-  const dir = directRoute("plan")
-  markDone(dir, "01_01_setup.md")
-  markDone(dir, "01_02_build.md")
-  assert.equal(ok("report", dir).next_action, "acceptance")
-
-  const result = ok("approve", dir, "acceptance")
-  assert.equal(result.approved, "acceptance")
-  assert.match(result.hash, /^[0-9a-f]{40}$/)
-  assert.equal(ok("report", dir).next_action, "close_out")
-
-  const state = JSON.parse(readFileSync(join(dir, ".workflow-state"), "utf8"))
-  assert.equal(state.accepted, result.hash)
-})
-
-test("approve: acceptance with tasks remaining fails", () => {
-  const dir = directRoute("plan")
-  markDone(dir, "01_01_setup.md")
-
-  const { error } = fails("approve", dir, "acceptance")
-  assert.match(error, /tasks remaining \(01_02\)/)
-})
-
-test("approve: acceptance with unapproved stages fails", () => {
-  const dir = directRoute("requirements")
-  const { error } = fails("approve", dir, "acceptance")
-  assert.match(error, /not validly approved \(plan\)/)
-})
-
-test("approve: route on acceptance fails", () => {
-  const dir = directRoute("plan")
-  markDone(dir, "01_01_setup.md")
-  markDone(dir, "01_02_build.md")
-  fails("approve", dir, "acceptance", "route=direct")
-})
-
-test("report: doc edits after acceptance re-run the pass", () => {
-  const dir = directRoute("plan")
-  markDone(dir, "01_01_setup.md")
-  markDone(dir, "01_02_build.md")
-  ok("approve", dir, "acceptance")
-
-  // Editing goals cascades away the later approvals; re-walking the stages
-  // clears done/ (different plan approval), and redoing the tasks lands back
-  // on identical artifacts — but the goals bytes changed, so the recorded
-  // acceptance is stale and the pass must re-run.
-  writeFileSync(join(dir, "goals.md"), "# edited after acceptance")
-  ok("report", dir, "--write")
-  ok("approve", dir, "goals", "route=direct")
-  ok("approve", dir, "requirements")
-  ok("approve", dir, "plan")
-  markDone(dir, "01_01_setup.md")
-  markDone(dir, "01_02_build.md")
-
-  assert.equal(ok("report", dir).next_action, "acceptance")
-})
-
-test("report: an observed mismatch clears the acceptance record", () => {
-  const dir = directRoute("plan")
-  markDone(dir, "01_01_setup.md")
-  markDone(dir, "01_02_build.md")
-  ok("approve", dir, "acceptance")
-
-  const overview = join(dir, "implementation_plan", "00_overview.md")
-  const original = readFileSync(overview, "utf8")
-  writeFileSync(overview, original + "\n<!-- tweak -->\n")
-  assert.equal(ok("report", dir, "--write").accepted_cleared, true)
-  writeFileSync(overview, original)
-
-  // The overview is byte-identical to what was accepted, but the observed
-  // mismatch dropped the record — a revert cannot resurrect an acceptance.
-  assert.equal(ok("report", dir).next_action, "acceptance")
-})
-
-test("approve: a changed approval clears the acceptance record", () => {
-  const dir = directRoute("plan")
-  markDone(dir, "01_01_setup.md")
-  markDone(dir, "01_02_build.md")
-  ok("approve", dir, "acceptance")
-
-  writeFileSync(join(dir, "requirements.md"), "# reqs v2")
-  assert.equal(ok("approve", dir, "requirements").accepted_cleared, true)
-
-  const state = JSON.parse(readFileSync(join(dir, ".workflow-state"), "utf8"))
-  assert.equal(state.accepted, undefined)
-})
-
-test("approve: an unchanged re-approval keeps the acceptance record", () => {
-  const dir = directRoute("plan")
-  markDone(dir, "01_01_setup.md")
-  markDone(dir, "01_02_build.md")
-  ok("approve", dir, "acceptance")
-
-  const result = ok("approve", dir, "plan")
-  assert.equal(result.accepted_cleared, undefined)
-  assert.equal(ok("report", dir).next_action, "close_out")
-})
-
-test("report: a done/ change alone makes the acceptance stale", () => {
-  const dir = directRoute("plan")
-  markDone(dir, "01_01_setup.md")
-  markDone(dir, "01_02_build.md")
-  ok("approve", dir, "acceptance")
-
-  // A stray done file changes no stage hash and no task verdict, but it is
-  // part of the delivered state the acceptance hashed — the pass re-runs.
-  markDone(dir, "09_09_stray.md")
-  assert.equal(ok("report", dir).next_action, "acceptance")
-})
-
-test("report: invalid accepted hash is broken state", () => {
-  const dir = miseDir({
-    "goals.md": "# goals",
-    ".workflow-state": JSON.stringify({ accepted: "nothex" }),
-  })
-
-  const { error } = fails("report", dir)
-  assert.match(error, /broken/)
-})
-
-test("report: accepted without approvals is broken state", () => {
-  const dir = miseDir({
-    "goals.md": "# goals",
-    ".workflow-state": JSON.stringify({
-      accepted: "0123456789abcdef0123456789abcdef01234567",
-    }),
-  })
-
-  const { error } = fails("report", dir)
-  assert.match(error, /broken/)
-})
-
-// --- CLI ------------------------------------------------------------------------
+// --- CLI ----------------------------------------------------------------------
 
 test("cli: missing arguments and unknown commands fail with usage", () => {
   fails()
@@ -530,8 +849,9 @@ test("cli: missing arguments and unknown commands fail with usage", () => {
   fails("frobnicate", miseDir())
 })
 
-test("cli: the retired set and reopen commands fail", () => {
-  const dir = directRoute("goals")
-  fails("set", dir, "route=direct")
-  fails("reopen", dir, "goals")
+test("cli: the retired v2 commands fail", () => {
+  const dir = started()
+
+  fails("approve", dir, "goals", "done")
+  fails("approve", dir, "acceptance")
 })
