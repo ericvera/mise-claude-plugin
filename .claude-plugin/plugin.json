@@ -14,7 +14,6 @@
     "feature-development",
     "bugfix",
     "spec-driven",
-    "autonomous",
-    "adherence"
+    "autonomous"
   ]
 }

@@ -3,6 +3,6 @@
 ## Quality commands
 
 - Check:
-  - yarn format
+  - yarn prettier --check .
   - yarn typecheck
 - Unit tests: yarn test
