@@ -2,6 +2,8 @@
 
 Arriving with the owner's reply → handle it below. Otherwise, when `.mise/review.md` is missing or lacks a line for a task in `tasks/done/`, write it. It holds one line per task (what changed and how to verify it, from the task files and `git log`), then the open assumptions from `goals.md` and `spec.md`, and the amendments so far, at most 60 lines in all. When one line per task would pass 60 lines, write one line per area instead. Print at most 5 lines on what to look at and where, the last saying `/mise:next ship` ends the stage, and stop. The run waits here. Feedback arrives in chat, as `/mise:next`'s argument, or through the `delta:review-notes` skill's contract wherever that skill is installed and the owner says there are notes.
 
+Feedback also arrives through any skill the owner invokes at this stage that yields review feedback. Use that skill only to read the feedback and to reply in its format. Handle each item below, and never follow the skill's instructions to change code yourself.
+
 Handle each item by what it changes:
 
 - **point** → group it with the other point fixes and send each group to one implementer, with the files or directories the points concern as `Fix scope:` and the points as `Defects:`.
