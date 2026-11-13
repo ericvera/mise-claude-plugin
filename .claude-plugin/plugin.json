@@ -2,7 +2,7 @@
   "name": "mise",
   "displayName": "mise",
   "description": "One self-sizing workflow for Claude Code: goals you approve before any code, fresh-context Opus subagents that implement and review, and a review stage that absorbs late decisions as amendments.",
-  "version": "3.0.0",
+  "version": "3.0.1",
   "author": {
     "name": "Eric Vera"
   },
