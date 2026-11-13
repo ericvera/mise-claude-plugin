@@ -5,7 +5,7 @@
   "steps": {
     "goals": null,
     "spec": "skipped",
-    "critic": null,
+    "critic": "skipped",
     "execute": null,
     "review": null,
     "gate": null
