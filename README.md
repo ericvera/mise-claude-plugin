@@ -35,7 +35,7 @@ Assumes [auto mode](https://code.claude.com/docs/en/permission-modes). The skill
 
 ## Configuration
 
-Setup writes `.claude/mise-config.md`. `## Quality commands` is required, and holds Check and Unit tests, inferred from your package manifest for you to confirm. `## Mock conditions` and `## Skills & guides` are optional. [setup.md](skills/next/setup.md) defines each section. Anything else in `.claude/mise-config.md` is called out when a run loads it, with an offer to remove it, and setup removes it.
+Setup writes `.claude/mise-config.md`. `## Quality commands` is required, and holds Check and Unit tests, inferred from your package manifest for you to confirm. `## Mock conditions` and `## Skills & guides` are optional. [setup.md](skills/next/setup.md) defines each section. Anything else in `.claude/mise-config.md` is called out before a run starts, with an offer to remove it, and setup removes it.
 
 Nothing else is configurable. Work in flight lives in `.mise/` on its branch, committed as it goes so any checkout resumes it. New branches are `feat/<slug>` or `fix/<slug>`.
 

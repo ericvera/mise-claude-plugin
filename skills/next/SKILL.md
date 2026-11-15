@@ -38,7 +38,7 @@ node ${CLAUDE_SKILL_DIR}/scripts/state.ts report .mise
 
 ## Route
 
-`in_flight` false and any `##` section or line in `.claude/mise-config.md` outside those `${CLAUDE_SKILL_DIR}/setup.md`'s Config shape defines → before routing, ask one question that lists them verbatim, says mise does not read them, and offers a. remove them (recommended) and b. keep them. On remove, delete them from `.claude/mise-config.md` and commit with subject `mise: config cleanup`. On either answer, resume with the original arguments.
+`in_flight` false and any `##` section or line in `.claude/mise-config.md` outside those `${CLAUDE_SKILL_DIR}/setup.md`'s Config shape defines → before routing, ask one question that lists them verbatim, says mise does not read them, and offers a. remove them (recommended) and b. keep them. A description that answers this question is that answer, not new work: skip the check for that invocation. On remove, delete them from `.claude/mise-config.md` and commit with subject `mise: config cleanup`. On either answer, ask "Describe what you want to work on:".
 
 - `in_flight` true with a description → it is the owner's reply to where the run stopped. Handle it once, in the step `next_action` names. A description that is new work rather than a reply → "Work is already in flight on this branch — finish it, or start new work on a fresh branch." Stop.
 - `in_flight` false with no description → ask "Describe what you want to work on:".
