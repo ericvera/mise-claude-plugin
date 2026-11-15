@@ -23,8 +23,6 @@ You are the **driver**. Read the state, run the step it names, talk with the own
 
 Read `.claude/mise-config.md`. No config file, or no Quality commands value → run setup to fill it, then resume with the original arguments.
 
-Any `##` section or line outside those `${CLAUDE_SKILL_DIR}/setup.md`'s Config shape defines → ask one question that lists them verbatim, says mise does not read them, and offers a. remove them (recommended) and b. keep them. On remove, delete them from `.claude/mise-config.md` and commit with subject `mise: config cleanup`. On either answer, resume with the original arguments.
-
 ## State
 
 ```
@@ -39,6 +37,8 @@ node ${CLAUDE_SKILL_DIR}/scripts/state.ts report .mise
 - Delete `.mise` only in the close step.
 
 ## Route
+
+`in_flight` false and any `##` section or line in `.claude/mise-config.md` outside those `${CLAUDE_SKILL_DIR}/setup.md`'s Config shape defines → before routing, ask one question that lists them verbatim, says mise does not read them, and offers a. remove them (recommended) and b. keep them. On remove, delete them from `.claude/mise-config.md` and commit with subject `mise: config cleanup`. On either answer, resume with the original arguments.
 
 - `in_flight` true with a description → it is the owner's reply to where the run stopped. Handle it once, in the step `next_action` names. A description that is new work rather than a reply → "Work is already in flight on this branch — finish it, or start new work on a fresh branch." Stop.
 - `in_flight` false with no description → ask "Describe what you want to work on:".
@@ -71,4 +71,4 @@ Every set ends with the `Recommend:` line. Pick one even when torn, and add a re
 
 ## Stopping
 
-Stop only at the goals approval, the review stage, the unrecognized config question in Load, a value only the owner holds, and wherever a step file says to stop. Never re-ask what `goals.md`, `spec.md` or the state already records. Everywhere else, resolve the next step and run it in the same turn.
+Stop only at the goals approval, the review stage, the unrecognized config question in Route, a value only the owner holds, and wherever a step file says to stop. Never re-ask what `goals.md`, `spec.md` or the state already records. Everywhere else, resolve the next step and run it in the same turn.
