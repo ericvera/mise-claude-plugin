@@ -25,12 +25,23 @@ Not a runtime bug, so there was nothing to reproduce. The close step behaved as 
 - A new config section or changed close behavior must update README.md (lines 38 and 53) and bump `version` 3.0.1 in .claude-plugin/plugin.json:5 in the same run.
 - Tests: state.ts parses no config. A regression test fits skills/next/scripts/state.test.ts only if the engine starts reading config (close order is covered at state.test.ts:243-271). Otherwise the change is prose-only and has no automated test.
 
-## Open questions
+## Decisions
 
-1. What should mise do about the stale `Ship:` line?
-   - a. Keep close ending at the PR; setup and Load flag 2.x lines the 3.x config no longer reads
-   - b. Bring `Ship` back as a config section that close reads, merge included
-   - c. Nothing — close this run with no change
-2. If 1a, what happens to a stale line when it is found?
-   - a. Load names the stale lines once per run and carries on; setup removes them
-   - b. Load stops and sends the owner to setup
+- `Ship` stays removed. Close keeps ending at the PR.
+- Load calls out anything in `.claude/mise-config.md` that the 3.x config does not recognize and offers a fix (owner, 2026-11-15: "as a quick safety we just call out any unrecognized sections in config and offer a fix").
+
+## Assumptions
+
+- "Unrecognized" covers both sections and top-level lines other than Quality commands, Mock conditions and Skills & guides. The 2.x leftovers (`Ship:`, `Mise directory:`, `Branch convention:`, `Checklist:`) are top-level lines.
+- The fix offered is removing the unrecognized content from the config. The callout says mise does not read it, so the owner knows it has no effect either way.
+- Declining leaves the config as is and the run carries on. The callout repeats on the next run.
+- The check is prose in the driver's Load, not in `state.ts`, which parses no config. No automated test.
+- Setup removes the same content when it revisits an existing config.
+- Load can now wait for the owner, so README.md is updated, and `version` goes to 3.0.2.
+- Out of scope: any merge in close, and migrating 2.x values into 3.x sections.
+
+## Proposal
+
+- Issue: a config written under 2.x keeps lines 3.x never reads (`Ship: merge (squash)`), so the config and the close step appear to disagree.
+- Fix: Load calls out unrecognized config sections and lines and offers to remove them; setup removes them too. README and version 3.0.2 in the same run.
+- Skips: spec and critic — prose in one module, nothing hard to undo.
