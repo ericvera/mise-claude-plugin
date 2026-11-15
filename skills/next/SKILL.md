@@ -23,6 +23,8 @@ You are the **driver**. Read the state, run the step it names, talk with the own
 
 Read `.claude/mise-config.md`. No config file, or no Quality commands value → run setup to fill it, then resume with the original arguments.
 
+Any `##` section or line outside those `${CLAUDE_SKILL_DIR}/setup.md`'s Config shape defines → ask one question that lists them verbatim, says mise does not read them, and offers a. remove them (recommended) and b. keep them. On remove, delete them from `.claude/mise-config.md` and commit with subject `mise: config cleanup`. On either answer, resume with the original arguments.
+
 ## State
 
 ```
@@ -69,4 +71,4 @@ Every set ends with the `Recommend:` line. Pick one even when torn, and add a re
 
 ## Stopping
 
-Stop only at the goals approval, the review stage, a value only the owner holds, and wherever a step file says to stop. Never re-ask what `goals.md`, `spec.md` or the state already records. Everywhere else, resolve the next step and run it in the same turn.
+Stop only at the goals approval, the review stage, the unrecognized config question in Load, a value only the owner holds, and wherever a step file says to stop. Never re-ask what `goals.md`, `spec.md` or the state already records. Everywhere else, resolve the next step and run it in the same turn.
