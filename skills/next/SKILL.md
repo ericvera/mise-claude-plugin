@@ -38,6 +38,8 @@ node ${CLAUDE_SKILL_DIR}/scripts/state.ts report .mise
 
 ## Route
 
+`in_flight` false and any `##` section, or any line outside the title and sections, in `.claude/mise-config.md` that `${CLAUDE_SKILL_DIR}/setup.md`'s Config shape does not define → before routing, ask one question that lists them verbatim, says mise does not read them, and offers a. remove them (recommended) and b. keep them. A description that answers this question is that answer, not new work. Once it is answered, skip this check for the rest of the conversation. On remove, delete them from `.claude/mise-config.md` without committing, and include that edit in Start's commit. On either answer, route the description the invocation that raised the question gave, or ask "Describe what you want to work on:" when it gave none.
+
 - `in_flight` true with a description → it is the owner's reply to where the run stopped. Handle it once, in the step `next_action` names. A description that is new work rather than a reply → "Work is already in flight on this branch — finish it, or start new work on a fresh branch." Stop.
 - `in_flight` false with no description → ask "Describe what you want to work on:".
 - `in_flight` false with a description → `${CLAUDE_SKILL_DIR}/steps/01-start.md`.
@@ -69,4 +71,4 @@ Every set ends with the `Recommend:` line. Pick one even when torn, and add a re
 
 ## Stopping
 
-Stop only at the goals approval, the review stage, a value only the owner holds, and wherever a step file says to stop. Never re-ask what `goals.md`, `spec.md` or the state already records. Everywhere else, resolve the next step and run it in the same turn.
+Stop only at the goals approval, the review stage, the unrecognized config question in Route, a value only the owner holds, and wherever a step file says to stop. Never re-ask what `goals.md`, `spec.md` or the state already records. Everywhere else, resolve the next step and run it in the same turn.

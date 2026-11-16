@@ -35,13 +35,13 @@ Assumes [auto mode](https://code.claude.com/docs/en/permission-modes). The skill
 
 ## Configuration
 
-Setup writes `.claude/mise-config.md`. `## Quality commands` is required, and holds Check and Unit tests, inferred from your package manifest for you to confirm. `## Mock conditions` and `## Skills & guides` are optional. [setup.md](skills/next/setup.md) defines each section.
+Setup writes `.claude/mise-config.md`. `## Quality commands` is required, and holds Check and Unit tests, inferred from your package manifest for you to confirm. `## Mock conditions` and `## Skills & guides` are optional. [setup.md](skills/next/setup.md) defines each section. Anything else in `.claude/mise-config.md` is called out once per conversation, before a run starts, with an offer to remove it, and setup removes it.
 
 Nothing else is configurable. Work in flight lives in `.mise/` on its branch, committed as it goes so any checkout resumes it. New branches are `feat/<slug>` or `fix/<slug>`.
 
 ## How it works
 
-One piece of work per branch, eight steps in order. The run waits for you at **goals** and **review**, and whenever it needs an answer only you hold. Otherwise it stops only when something fails.
+One piece of work per branch, eight steps in order. The run waits for you at **goals** and **review**, at the unrecognized config question, and whenever it needs an answer only you hold. Otherwise it stops only when something fails.
 
 1. **start** turns your description into `goals.md`, on its own branch.
 2. **goals** has an `investigator` read the code, asks the questions where a decision is yours, adds an HTML mock when `## Mock conditions` match, then gives you a proposal of at most 3 lines to approve.

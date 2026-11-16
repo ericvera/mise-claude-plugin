@@ -1,6 +1,6 @@
 # Setup
 
-Interview the owner, then write `.claude/mise-config.md` in the shape below. An existing config is revisited section by section, its current value shown.
+Interview the owner, then write `.claude/mise-config.md` in the shape below. An existing config is revisited section by section, its current value shown, and any section or line the Config shape below does not define is removed.
 
 ## Config shape
 
